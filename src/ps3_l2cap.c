@@ -24,8 +24,8 @@
 /*              L O C A L    F U N C T I O N     P R O T O T Y P E S            */
 /********************************************************************************/
 
-static void ps3_l2cap_init_service( char *name, uint16_t psm, uint8_t security_id);
-static void ps3_l2cap_deinit_service( char *name, uint16_t psm );
+static void ps3_l2cap_init_service( const char *name, uint16_t psm, uint8_t security_id);
+static void ps3_l2cap_deinit_service( const char *name, uint16_t psm );
 static void ps3_l2cap_connect_ind_cback (BD_ADDR  bd_addr, uint16_t l2cap_cid, uint16_t psm, uint8_t l2cap_id);
 static void ps3_l2cap_connect_cfm_cback (uint16_t l2cap_cid, uint16_t result);
 static void ps3_l2cap_config_ind_cback (uint16_t l2cap_cid, tL2CAP_CFG_INFO *p_cfg);
@@ -146,7 +146,7 @@ void ps3_l2cap_send_hid( hid_cmd_t *hid_cmd, uint8_t len )
 ** Returns          void
 **
 *******************************************************************************/
-static void ps3_l2cap_init_service( char *name, uint16_t psm, uint8_t security_id)
+static void ps3_l2cap_init_service( const char *name, uint16_t psm, uint8_t security_id)
 {
     /* Register the PSM for incoming connections */
     if (!L2CA_Register(psm, (tL2CAP_APPL_INFO *) &dyn_info)) {
@@ -172,7 +172,7 @@ static void ps3_l2cap_init_service( char *name, uint16_t psm, uint8_t security_i
 ** Returns          void
 **
 *******************************************************************************/
-static void ps3_l2cap_deinit_service( char *name, uint16_t psm )
+static void ps3_l2cap_deinit_service( const char *name, uint16_t psm )
 {
     /* Deregister the PSM from incoming connections */
     L2CA_Deregister(psm);
