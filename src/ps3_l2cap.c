@@ -7,9 +7,8 @@
 #include "esp_log.h"
 #include "esp_bt.h"
 #include "esp_bt_main.h"
-#include "esp_gap_bt_api.h"
-#include "stack/gap_api.h"
 #include "stack/bt_types.h"
+#include "stack/btm_api.h"
 #include "stack/l2c_api.h"
 #include "osi/allocator.h"
 
