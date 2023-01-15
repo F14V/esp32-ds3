@@ -77,12 +77,12 @@ enum ps3_status_mask {
 /*              L O C A L    F U N C T I O N     P R O T O T Y P E S            */
 /********************************************************************************/
 
-ps3_sensor_t ps3_parse_packet_sensor( uint8_t *packet );
-ps3_status_t ps3_parse_packet_status( uint8_t *packet );
-ps3_analog_stick_t ps3_parse_packet_analog_stick( uint8_t *packet );
-ps3_analog_button_t ps3_parse_packet_analog_button( uint8_t *packet );
-ps3_button_t ps3_parse_packet_buttons( uint8_t *packet );
-ps3_event_t ps3_parse_event( ps3_t prev, ps3_t cur );
+static ps3_sensor_t ps3_parse_packet_sensor( uint8_t *packet );
+static ps3_status_t ps3_parse_packet_status( uint8_t *packet );
+static ps3_analog_stick_t ps3_parse_packet_analog_stick( uint8_t *packet );
+static ps3_analog_button_t ps3_parse_packet_analog_button( uint8_t *packet );
+static ps3_button_t ps3_parse_packet_buttons( uint8_t *packet );
+static ps3_event_t ps3_parse_event( ps3_t prev, ps3_t cur );
 
 
 /********************************************************************************/
@@ -126,7 +126,7 @@ void ps3_parse_packet( uint8_t *packet )
 /******************/
 /*    E V E N T   */
 /******************/
-ps3_event_t ps3_parse_event( ps3_t prev, ps3_t cur )
+static ps3_event_t ps3_parse_event( ps3_t prev, ps3_t cur )
 {
     ps3_event_t ps3_event;
 
@@ -203,7 +203,7 @@ ps3_event_t ps3_parse_event( ps3_t prev, ps3_t cur )
 /********************/
 /*    A N A L O G   */
 /********************/
-ps3_analog_stick_t ps3_parse_packet_analog_stick( uint8_t *packet )
+static ps3_analog_stick_t ps3_parse_packet_analog_stick( uint8_t *packet )
 {
     ps3_analog_stick_t ps3_analog_stick;
 
@@ -217,7 +217,7 @@ ps3_analog_stick_t ps3_parse_packet_analog_stick( uint8_t *packet )
     return ps3_analog_stick;
 }
 
-ps3_analog_button_t ps3_parse_packet_analog_button( uint8_t *packet )
+static ps3_analog_button_t ps3_parse_packet_analog_button( uint8_t *packet )
 {
     ps3_analog_button_t ps3_analog_button;
 
@@ -243,7 +243,7 @@ ps3_analog_button_t ps3_parse_packet_analog_button( uint8_t *packet )
 /*   B U T T O N S   */
 /*********************/
 
-ps3_button_t ps3_parse_packet_buttons( uint8_t *packet )
+static ps3_button_t ps3_parse_packet_buttons( uint8_t *packet )
 {
     ps3_button_t ps3_button;
     uint32_t ps3_buttons_raw = *((uint32_t*)&packet[ps3_packet_index_buttons_raw]);
@@ -276,7 +276,7 @@ ps3_button_t ps3_parse_packet_buttons( uint8_t *packet )
 /*******************************/
 /*   S T A T U S   F L A G S   */
 /*******************************/
-ps3_status_t ps3_parse_packet_status( uint8_t *packet )
+static ps3_status_t ps3_parse_packet_status( uint8_t *packet )
 {
     ps3_status_t ps3_status;
 
@@ -291,7 +291,7 @@ ps3_status_t ps3_parse_packet_status( uint8_t *packet )
 /********************/
 /*   S E N S O R S  */
 /********************/
-ps3_sensor_t ps3_parse_packet_sensor( uint8_t *packet )
+static ps3_sensor_t ps3_parse_packet_sensor( uint8_t *packet )
 {
     ps3_sensor_t ps3_sensor;
 
