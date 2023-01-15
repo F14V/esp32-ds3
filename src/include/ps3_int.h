@@ -22,6 +22,10 @@
 #error "The ESP32-PS3 module requires Classic Bluetooth's SPP to be enabled in the project's menuconfig"
 #endif
 
+#ifndef CONFIG_BT_L2CAP_ENABLED
+#error "The ESP32-PS3 module requires Classic Bluetooth's L2CAP to be enabled in the project's menuconfig"
+#endif
+
 /** Check the configured blueooth mode */
 #ifdef CONFIG_BTDM_CONTROLLER_MODE_BTDM
 #define BT_MODE ESP_BT_MODE_BTDM
