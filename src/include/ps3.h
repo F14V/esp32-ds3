@@ -12,10 +12,10 @@
 /********************/
 
 typedef struct {
-    int8_t lx;
-    int8_t ly;
-    int8_t rx;
-    int8_t ry;
+    uint8_t lx;
+    uint8_t ly;
+    uint8_t rx;
+    uint8_t ry;
 } ps3_analog_stick_t;
 
 typedef struct {

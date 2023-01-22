@@ -207,12 +207,10 @@ static ps3_analog_stick_t ps3_parse_packet_analog_stick( uint8_t *packet )
 {
     ps3_analog_stick_t ps3_analog_stick;
 
-    const uint8_t int_offset = 0x80;
-
-    ps3_analog_stick.lx = (int16_t)packet[ps3_packet_index_analog_stick_lx] - int_offset;
-    ps3_analog_stick.ly = (int16_t)packet[ps3_packet_index_analog_stick_ly] - int_offset;
-    ps3_analog_stick.rx = (int16_t)packet[ps3_packet_index_analog_stick_rx] - int_offset;
-    ps3_analog_stick.ry = (int16_t)packet[ps3_packet_index_analog_stick_ry] - int_offset;
+    ps3_analog_stick.lx = packet[ps3_packet_index_analog_stick_lx];
+    ps3_analog_stick.ly = packet[ps3_packet_index_analog_stick_ly];
+    ps3_analog_stick.rx = packet[ps3_packet_index_analog_stick_rx];
+    ps3_analog_stick.ry = packet[ps3_packet_index_analog_stick_ry];
 
     return ps3_analog_stick;
 }
