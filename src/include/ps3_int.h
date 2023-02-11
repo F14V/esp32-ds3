@@ -2,6 +2,7 @@
 #define PS3_INT_H
 
 #include "sdkconfig.h"
+#include "ps3_int.h"
 
 /** Check if the project is configured properly */
 #ifndef ARDUINO_ARCH_ESP32

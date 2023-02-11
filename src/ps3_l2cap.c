@@ -155,7 +155,7 @@ static void ps3_l2cap_init_service( const char *name, uint16_t psm, uint8_t secu
 
     /* Register with the Security Manager for our specific security level (none) */
     if (!BTM_SetSecurityLevel (false, name, security_id, 0, psm, 0, 0)) {
-        ESP_LOGE (PS3_TAG, "%s Registering security service %s failed", __func__, name);\
+        ESP_LOGE (PS3_TAG, "%s Registering security service %s failed", __func__, name);
         return;
     }
 
