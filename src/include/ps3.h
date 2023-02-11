@@ -45,28 +45,31 @@ typedef struct {
 /*   B U T T O N S   */
 /*********************/
 
-typedef struct {
-    uint8_t select   : 1;
-    uint8_t l3       : 1;
-    uint8_t r3       : 1;
-    uint8_t start    : 1;
+typedef union {
+    struct {
+        uint32_t select   : 1;
+        uint32_t l3       : 1;
+        uint32_t r3       : 1;
+        uint32_t start    : 1;
 
-    uint8_t up       : 1;
-    uint8_t right    : 1;
-    uint8_t down     : 1;
-    uint8_t left     : 1;
+        uint32_t up       : 1;
+        uint32_t right    : 1;
+        uint32_t down     : 1;
+        uint32_t left     : 1;
 
-    uint8_t l2       : 1;
-    uint8_t r2       : 1;
-    uint8_t l1       : 1;
-    uint8_t r1       : 1;
+        uint32_t l2       : 1;
+        uint32_t r2       : 1;
+        uint32_t l1       : 1;
+        uint32_t r1       : 1;
 
-    uint8_t triangle : 1;
-    uint8_t circle   : 1;
-    uint8_t cross    : 1;
-    uint8_t square   : 1;
+        uint32_t triangle : 1;
+        uint32_t circle   : 1;
+        uint32_t cross    : 1;
+        uint32_t square   : 1;
 
-    uint8_t ps       : 1;
+        uint32_t ps       : 1;
+    };
+    uint32_t fields;
 } ps3_button_t;
 
 
@@ -145,7 +148,6 @@ typedef struct {
     ps3_button_t button;
     ps3_status_t status;
     ps3_sensor_t sensor;
-
 } ps3_t;
 
 

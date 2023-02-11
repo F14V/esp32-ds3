@@ -64,7 +64,14 @@ enum ps3_button_mask {
     ps3_button_mask_cross    = 1 << 14,
     ps3_button_mask_square   = 1 << 15,
 
-    ps3_button_mask_ps       = 1 << 16
+    ps3_button_mask_ps       = 1 << 16,
+
+    ps3_button_mask_fields = 
+        ps3_button_mask_select | ps3_button_mask_l3 | ps3_button_mask_r3 | ps3_button_mask_start |
+        ps3_button_mask_up | ps3_button_mask_right | ps3_button_mask_down | ps3_button_mask_left |
+        ps3_button_mask_l2 | ps3_button_mask_r2 | ps3_button_mask_l1 | ps3_button_mask_r1 |
+        ps3_button_mask_triangle | ps3_button_mask_circle | ps3_button_mask_cross | ps3_button_mask_square |
+        ps3_button_mask_ps
 };
 
 enum ps3_status_mask {
@@ -114,8 +121,6 @@ void ps3_parse_packet( uint8_t *packet )
     ps3_event_t ps3_event = ps3_parse_event( prev_ps3, ps3 );
 
     ps3_packet_event( ps3, ps3_event );
-
-
 }
 
 
@@ -131,50 +136,10 @@ static ps3_event_t ps3_parse_event( ps3_t prev, ps3_t cur )
     ps3_event_t ps3_event;
 
     /* Button down events */
-    ps3_event.button_down.select   = !prev.button.select   && cur.button.select;
-    ps3_event.button_down.l3       = !prev.button.l3       && cur.button.l3;
-    ps3_event.button_down.r3       = !prev.button.r3       && cur.button.r3;
-    ps3_event.button_down.start    = !prev.button.start    && cur.button.start;
-
-    ps3_event.button_down.up       = !prev.button.up       && cur.button.up;
-    ps3_event.button_down.right    = !prev.button.right    && cur.button.right;
-    ps3_event.button_down.down     = !prev.button.down     && cur.button.down;
-    ps3_event.button_down.left     = !prev.button.left     && cur.button.left;
-
-    ps3_event.button_down.l2       = !prev.button.l2       && cur.button.l2;
-    ps3_event.button_down.r2       = !prev.button.r2       && cur.button.r2;
-    ps3_event.button_down.l1       = !prev.button.l1       && cur.button.l1;
-    ps3_event.button_down.r1       = !prev.button.r1       && cur.button.r1;
-
-    ps3_event.button_down.triangle = !prev.button.triangle && cur.button.triangle;
-    ps3_event.button_down.circle   = !prev.button.circle   && cur.button.circle;
-    ps3_event.button_down.cross    = !prev.button.cross    && cur.button.cross;
-    ps3_event.button_down.square   = !prev.button.square   && cur.button.square;
-
-    ps3_event.button_down.ps       = !prev.button.ps       && cur.button.ps;
+    ps3_event.button_down.fields = ~prev.button.fields & cur.button.fields;
 
     /* Button up events */
-    ps3_event.button_up.select   = prev.button.select   && !cur.button.select;
-    ps3_event.button_up.l3       = prev.button.l3       && !cur.button.l3;
-    ps3_event.button_up.r3       = prev.button.r3       && !cur.button.r3;
-    ps3_event.button_up.start    = prev.button.start    && !cur.button.start;
-
-    ps3_event.button_up.up       = prev.button.up       && !cur.button.up;
-    ps3_event.button_up.right    = prev.button.right    && !cur.button.right;
-    ps3_event.button_up.down     = prev.button.down     && !cur.button.down;
-    ps3_event.button_up.left     = prev.button.left     && !cur.button.left;
-
-    ps3_event.button_up.l2       = prev.button.l2       && !cur.button.l2;
-    ps3_event.button_up.r2       = prev.button.r2       && !cur.button.r2;
-    ps3_event.button_up.l1       = prev.button.l1       && !cur.button.l1;
-    ps3_event.button_up.r1       = prev.button.r1       && !cur.button.r1;
-
-    ps3_event.button_up.triangle = prev.button.triangle && !cur.button.triangle;
-    ps3_event.button_up.circle   = prev.button.circle   && !cur.button.circle;
-    ps3_event.button_up.cross    = prev.button.cross    && !cur.button.cross;
-    ps3_event.button_up.square   = prev.button.square   && !cur.button.square;
-
-    ps3_event.button_up.ps       = prev.button.ps       && !cur.button.ps;
+    ps3_event.button_up.fields   = prev.button.fields & ~cur.button.fields;
 
     /* Analog events */
     ps3_event.analog_changed.stick.lx        = cur.analog.stick.lx - prev.analog.stick.lx;
@@ -240,33 +205,11 @@ static ps3_analog_button_t ps3_parse_packet_analog_button( uint8_t *packet )
 /*********************/
 /*   B U T T O N S   */
 /*********************/
-
 static ps3_button_t ps3_parse_packet_buttons( uint8_t *packet )
 {
     ps3_button_t ps3_button;
-    uint32_t ps3_buttons_raw = *((uint32_t*)&packet[ps3_packet_index_buttons_raw]);
 
-    ps3_button.select   = (ps3_buttons_raw & ps3_button_mask_select)   ? true : false;
-    ps3_button.l3       = (ps3_buttons_raw & ps3_button_mask_l3)       ? true : false;
-    ps3_button.r3       = (ps3_buttons_raw & ps3_button_mask_r3)       ? true : false;
-    ps3_button.start    = (ps3_buttons_raw & ps3_button_mask_start)    ? true : false;
-
-    ps3_button.up       = (ps3_buttons_raw & ps3_button_mask_up)       ? true : false;
-    ps3_button.right    = (ps3_buttons_raw & ps3_button_mask_right)    ? true : false;
-    ps3_button.down     = (ps3_buttons_raw & ps3_button_mask_down)     ? true : false;
-    ps3_button.left     = (ps3_buttons_raw & ps3_button_mask_left)     ? true : false;
-
-    ps3_button.l2       = (ps3_buttons_raw & ps3_button_mask_l2)       ? true : false;
-    ps3_button.r2       = (ps3_buttons_raw & ps3_button_mask_r2)       ? true : false;
-    ps3_button.l1       = (ps3_buttons_raw & ps3_button_mask_l1)       ? true : false;
-    ps3_button.r1       = (ps3_buttons_raw & ps3_button_mask_r1)       ? true : false;
-
-    ps3_button.triangle = (ps3_buttons_raw & ps3_button_mask_triangle) ? true : false;
-    ps3_button.circle   = (ps3_buttons_raw & ps3_button_mask_circle)   ? true : false;
-    ps3_button.cross    = (ps3_buttons_raw & ps3_button_mask_cross)    ? true : false;
-    ps3_button.square   = (ps3_buttons_raw & ps3_button_mask_square)   ? true : false;
-
-    ps3_button.ps       = (ps3_buttons_raw & ps3_button_mask_ps)       ? true : false;
+    ps3_button.fields = *((uint32_t*)&packet[ps3_packet_index_buttons_raw]) & ps3_button_mask_fields;
 
     return ps3_button;
 }
@@ -301,5 +244,4 @@ static ps3_sensor_t ps3_parse_packet_sensor( uint8_t *packet )
     ps3_sensor.gyroscope.z     = (packet[ps3_packet_index_sensor_gyroscope_z]     << 8) + packet[ps3_packet_index_sensor_gyroscope_z+1]     - int_offset;
 
     return ps3_sensor;
-
 }
