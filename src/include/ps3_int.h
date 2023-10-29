@@ -19,10 +19,6 @@
 #error "The ESP32-PS3 module requires Classic Bluetooth to be enabled in the project's menuconfig"
 #endif
 
-#ifndef CONFIG_BT_SPP_ENABLED
-#error "The ESP32-PS3 module requires Classic Bluetooth's SPP to be enabled in the project's menuconfig"
-#endif
-
 #ifndef CONFIG_BT_L2CAP_ENABLED
 #error "The ESP32-PS3 module requires Classic Bluetooth's L2CAP to be enabled in the project's menuconfig"
 #endif
@@ -37,42 +33,6 @@
 #endif
 
 #endif // ARDUINO_ARCH_ESP32
-
-
-/* Detect ESP-IDF releases */
-#if __has_include("esp_idf_version.h")
-#include <esp_idf_version.h>
-
-#else
-
-/* Detect Arduino releases */
-#if __has_include("core_version.h")
-#include <core_version.h>
-#endif
-
-/* Arduino releases using IDF v3.2.3 */
-#if defined(ARDUINO_ESP32_RELEASE_1_0_4) || defined(ARDUINO_ESP32_RELEASE_1_0_3)
-#define ESP_IDF_VERSION_MAJOR 3
-#define ESP_IDF_VERSION_MINOR 2
-#define ESP_IDF_VERSION_PATCH 3
-#endif
-
-/* Arduino releases using IDF v3.2.2 */
-#if defined(ARDUINO_ESP32_RELEASE_1_0_3) || defined(ARDUINO_ESP32_RELEASE_1_0_2) || defined(ARDUINO_ESP32_RELEASE_1_0_1) || defined(ARDUINO_ESP32_RELEASE_1_0_0)
-#define ESP_IDF_VERSION_MAJOR 3
-#define ESP_IDF_VERSION_MINOR 2
-#define ESP_IDF_VERSION_PATCH 2
-#endif
-
-// Macro to convert IDF version number into an integer
-#define ESP_IDF_VERSION_VAL(major, minor, patch) ((major << 16) | (minor << 8) | (patch))
-
-// Current IDF version, as an integer
-#define ESP_IDF_VERSION  ESP_IDF_VERSION_VAL(ESP_IDF_VERSION_MAJOR, \
-                                             ESP_IDF_VERSION_MINOR, \
-                                             ESP_IDF_VERSION_PATCH)
-
-#endif // __has_include("esp_idf_version.h")
 
 
 /** Size of the output report buffer for the Dualshock and Navigation controllers */
@@ -139,11 +99,11 @@ void ps3_parse_packet(uint8_t *packet);
 
 
 /********************************************************************************/
-/*                          S P P   F U N C T I O N S                           */
+/*                           B T   F U N C T I O N S                            */
 /********************************************************************************/
 
-void ps3_spp_init();
-void ps3_spp_deinit();
+void ps3_bt_init();
+void ps3_bt_deinit();
 
 
 /********************************************************************************/

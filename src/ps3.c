@@ -46,7 +46,7 @@ static bool is_active = false;
 *******************************************************************************/
 void ps3Init()
 {
-    ps3_spp_init();
+    ps3_bt_init();
     ps3_l2cap_init_services();
 }
 
@@ -64,7 +64,7 @@ void ps3Init()
 void ps3Deinit()
 {
     ps3_l2cap_deinit_services();
-    ps3_spp_deinit();
+    ps3_bt_deinit();
 }
 
 /*******************************************************************************

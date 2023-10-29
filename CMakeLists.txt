@@ -1,7 +1,7 @@
 idf_component_register(
         SRCS    "src/ps3.c"
+                "src/ps3_bt.c"
                 "src/ps3_l2cap.c"
-                "src/ps3_spp.c"
                 "src/ps3_parser.c"
         REQUIRES nvs_flash bt
         PRIV_REQUIRES bt
