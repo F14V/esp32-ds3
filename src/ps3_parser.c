@@ -114,10 +114,10 @@ void ps3_parse_packet( uint8_t *packet )
 
     ps3.button        = ps3_parse_packet_buttons(packet);
     ps3.analog.stick  = ps3_parse_packet_analog_stick(packet);
-#ifdef PS3_PARSE_ANALOG_BUTTON
+#ifndef PS3_PARSE_SKIP_ANALOG_BUTTON
     ps3.analog.button = ps3_parse_packet_analog_button(packet);
 #endif
-#ifdef PS3_PARSE_SENSOR
+#ifndef PS3_PARSE_SKIP_SENSOR
     ps3.sensor        = ps3_parse_packet_sensor(packet);
 #endif
     ps3.status        = ps3_parse_packet_status(packet);
@@ -145,14 +145,14 @@ static ps3_event_t ps3_parse_event( ps3_t prev, ps3_t cur )
     /* Button up events */
     ps3_event.button_up.fields   = prev.button.fields & ~cur.button.fields;
 
-#ifdef PS3_PARSE_ANALOG_CHANGED
+#ifndef PS3_PARSE_SKIP_ANALOG_CHANGED
     /* Analog events */
     ps3_event.analog_changed.stick.lx        = cur.analog.stick.lx - prev.analog.stick.lx;
     ps3_event.analog_changed.stick.ly        = cur.analog.stick.ly - prev.analog.stick.ly;
     ps3_event.analog_changed.stick.rx        = cur.analog.stick.rx - prev.analog.stick.rx;
     ps3_event.analog_changed.stick.ry        = cur.analog.stick.ry - prev.analog.stick.ry;
 
-#ifdef PS3_PARSE_ANALOG_BUTTON
+#ifndef PS3_PARSE_SKIP_ANALOG_BUTTON
     ps3_event.analog_changed.button.up       = cur.analog.button.up    - prev.analog.button.up;
     ps3_event.analog_changed.button.right    = cur.analog.button.right - prev.analog.button.right;
     ps3_event.analog_changed.button.down     = cur.analog.button.down  - prev.analog.button.down;

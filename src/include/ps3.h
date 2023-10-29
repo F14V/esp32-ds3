@@ -4,12 +4,13 @@
 #include <stdint.h>
 
 /* CONFIG */
-// Use accelerometer and gyroscope
-#define PS3_PARSE_SENSOR
-// Use analog functionality of buttons
-#define PS3_PARSE_ANALOG_BUTTON
-// Use analog changed events
-#define PS3_PARSE_ANALOG_CHANGED
+/* Flags that can be defined prior to including this file to skip certain parsing functionality */
+// Skip parsing accelerometer and gyroscope
+// #define PS3_PARSE_SKIP_SENSOR
+// Skip parsing analog functionality of buttons
+// #define PS3_PARSE_SKIP_ANALOG_BUTTON
+// Skip parsing changed events
+// #define PS3_PARSE_SKIP_ANALOG_CHANGED
 
 /********************************************************************************/
 /*                                  T Y P E S                                   */
@@ -45,7 +46,7 @@ typedef struct {
 
 typedef struct {
     ps3_analog_stick_t stick;
-#ifdef PS3_PARSE_ANALOG_BUTTON
+#ifndef PS3_PARSE_SKIP_ANALOG_BUTTON
     ps3_analog_button_t button;
 #endif
 } ps3_analog_t;
@@ -150,7 +151,7 @@ typedef struct {
 typedef struct {
     ps3_button_t button_down;
     ps3_button_t button_up;
-#ifdef PS3_PARSE_ANALOG_CHANGED
+#ifndef PS3_PARSE_SKIP_ANALOG_CHANGED
     ps3_analog_t analog_changed;
 #endif
 } ps3_event_t;
@@ -159,7 +160,7 @@ typedef struct {
     ps3_analog_t analog;
     ps3_button_t button;
     ps3_status_t status;
-#ifdef PS3_PARSE_SENSOR
+#ifndef PS3_PARSE_SKIP_SENSOR
     ps3_sensor_t sensor;
 #endif
 } ps3_t;
