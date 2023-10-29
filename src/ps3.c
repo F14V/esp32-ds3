@@ -67,7 +67,6 @@ void ps3Deinit()
     ps3_spp_deinit();
 }
 
-
 /*******************************************************************************
 **
 ** Function         ps3IsConnected
@@ -84,7 +83,6 @@ bool ps3IsConnected()
     return is_active;
 }
 
-
 /*******************************************************************************
 **
 ** Function         ps3Enable
@@ -98,15 +96,15 @@ bool ps3IsConnected()
 *******************************************************************************/
 void ps3Enable()
 {
-    uint16_t len = sizeof(hid_cmd_payload_ps3_enable);
     hid_cmd_t hid_cmd;
+    uint16_t len = sizeof(hid_cmd_payload_ps3_enable);
 
     hid_cmd.code = hid_cmd_code_set_report | hid_cmd_code_type_feature;
     hid_cmd.identifier = hid_cmd_identifier_ps3_enable;
 
-    memcpy( hid_cmd.data, hid_cmd_payload_ps3_enable, len);
+    memcpy(hid_cmd.data, hid_cmd_payload_ps3_enable, len);
 
-    ps3_l2cap_send_hid( &hid_cmd, len );
+    ps3_l2cap_send_hid(&hid_cmd, len);
 }
 
 /*******************************************************************************
@@ -119,9 +117,9 @@ void ps3Enable()
 ** Returns          void
 **
 *******************************************************************************/
-void ps3Cmd( ps3_cmd_t cmd )
+void ps3Cmd(ps3_cmd_t cmd)
 {
-    hid_cmd_t hid_cmd = { .data = {0} };
+    hid_cmd_t hid_cmd = {.data = {0}};
     uint16_t len = sizeof(hid_cmd.data);
 
     hid_cmd.code = hid_cmd_code_set_report | hid_cmd_code_type_output;
@@ -138,14 +136,13 @@ void ps3Cmd( ps3_cmd_t cmd )
     if (cmd.led3) hid_cmd.data[ps3_control_packet_index_leds] |= ps3_led_mask_led3;
     if (cmd.led4) hid_cmd.data[ps3_control_packet_index_leds] |= ps3_led_mask_led4;
 
-    if (cmd.led1) memcpy( hid_cmd.data + ps3_control_packet_index_led1_arguments, hid_cmd_payload_led_arguments, sizeof(hid_cmd_payload_led_arguments));
-    if (cmd.led2) memcpy( hid_cmd.data + ps3_control_packet_index_led2_arguments, hid_cmd_payload_led_arguments, sizeof(hid_cmd_payload_led_arguments));
-    if (cmd.led3) memcpy( hid_cmd.data + ps3_control_packet_index_led3_arguments, hid_cmd_payload_led_arguments, sizeof(hid_cmd_payload_led_arguments));
-    if (cmd.led4) memcpy( hid_cmd.data + ps3_control_packet_index_led4_arguments, hid_cmd_payload_led_arguments, sizeof(hid_cmd_payload_led_arguments));
+    if (cmd.led1) memcpy(hid_cmd.data + ps3_control_packet_index_led1_arguments, hid_cmd_payload_led_arguments, sizeof(hid_cmd_payload_led_arguments));
+    if (cmd.led2) memcpy(hid_cmd.data + ps3_control_packet_index_led2_arguments, hid_cmd_payload_led_arguments, sizeof(hid_cmd_payload_led_arguments));
+    if (cmd.led3) memcpy(hid_cmd.data + ps3_control_packet_index_led3_arguments, hid_cmd_payload_led_arguments, sizeof(hid_cmd_payload_led_arguments));
+    if (cmd.led4) memcpy(hid_cmd.data + ps3_control_packet_index_led4_arguments, hid_cmd_payload_led_arguments, sizeof(hid_cmd_payload_led_arguments));
 
-    ps3_l2cap_send_hid( &hid_cmd, len );
+    ps3_l2cap_send_hid(&hid_cmd, len);
 }
-
 
 /*******************************************************************************
 **
@@ -158,13 +155,12 @@ void ps3Cmd( ps3_cmd_t cmd )
 ** Returns          void
 **
 *******************************************************************************/
-void ps3SetLed( uint8_t player )
+void ps3SetLed(uint8_t player)
 {
     ps3_cmd_t cmd = {0};
     ps3SetLedCmd(&cmd, player);
     ps3Cmd(cmd);
 }
-
 
 /*******************************************************************************
 **
@@ -177,9 +173,8 @@ void ps3SetLed( uint8_t player )
 ** Returns          void
 **
 *******************************************************************************/
-void ps3SetLedCmd( ps3_cmd_t *cmd, uint8_t player )
+void ps3SetLedCmd(ps3_cmd_t *cmd, uint8_t player)
 {
-
     //           led4  led3  led2  led1
     // player 1                    1
     // player 2              1
@@ -192,13 +187,11 @@ void ps3SetLedCmd( ps3_cmd_t *cmd, uint8_t player )
     // player 9  1     1     1
     // player 10 1     1     1     1
 
-    if( (cmd->led4 = player >= 4) != 0 ) player -= 4;
-    if( (cmd->led3 = player >= 3) != 0 ) player -= 3;
-    if( (cmd->led2 = player >= 2) != 0 ) player -= 2;
-    if( (cmd->led1 = player >= 1) != 0 ) player -= 1;
-
+    if ((cmd->led4 = player >= 4) != 0) player -= 4;
+    if ((cmd->led3 = player >= 3) != 0) player -= 3;
+    if ((cmd->led2 = player >= 2) != 0) player -= 2;
+    if ((cmd->led1 = player >= 1) != 0) player -= 1;
 }
-
 
 /*******************************************************************************
 **
@@ -211,11 +204,10 @@ void ps3SetLedCmd( ps3_cmd_t *cmd, uint8_t player )
 ** Returns          void
 **
 *******************************************************************************/
-void ps3SetConnectionCallback( ps3_connection_callback_t cb )
+void ps3SetConnectionCallback(ps3_connection_callback_t cb)
 {
     ps3_connection_cb = cb;
 }
-
 
 /*******************************************************************************
 **
@@ -228,7 +220,7 @@ void ps3SetConnectionCallback( ps3_connection_callback_t cb )
 ** Returns          void
 **
 *******************************************************************************/
-void ps3SetConnectionObjectCallback( void *object, ps3_connection_object_callback_t cb )
+void ps3SetConnectionObjectCallback(void *object, ps3_connection_object_callback_t cb)
 {
     ps3_connection_object_cb = cb;
     ps3_connection_object = object;
@@ -244,11 +236,10 @@ void ps3SetConnectionObjectCallback( void *object, ps3_connection_object_callbac
 ** Returns          void
 **
 *******************************************************************************/
-void ps3SetEventCallback( ps3_event_callback_t cb )
+void ps3SetEventCallback(ps3_event_callback_t cb)
 {
     ps3_event_cb = cb;
 }
-
 
 /*******************************************************************************
 **
@@ -260,12 +251,11 @@ void ps3SetEventCallback( ps3_event_callback_t cb )
 ** Returns          void
 **
 *******************************************************************************/
-void ps3SetEventObjectCallback( void *object, ps3_event_object_callback_t cb )
+void ps3SetEventObjectCallback(void *object, ps3_event_object_callback_t cb)
 {
     ps3_event_object_cb = cb;
     ps3_event_object = object;
 }
-
 
 /*******************************************************************************
 **
@@ -277,7 +267,7 @@ void ps3SetEventObjectCallback( void *object, ps3_event_object_callback_t cb )
 ** Returns          void
 **
 *******************************************************************************/
-void ps3SetBluetoothMacAddress( const uint8_t *mac )
+void ps3SetBluetoothMacAddress(const uint8_t *mac)
 {
     // The bluetooth MAC address is derived from the base MAC address
     // https://docs.espressif.com/projects/esp-idf/en/stable/api-reference/system/system.html#mac-address
@@ -287,46 +277,42 @@ void ps3SetBluetoothMacAddress( const uint8_t *mac )
     esp_base_mac_addr_set(base_mac);
 }
 
-
 /********************************************************************************/
 /*                      L O C A L    F U N C T I O N S                          */
 /********************************************************************************/
 
-void ps3_connect_event( uint8_t is_connected )
+void ps3_connect_event(uint8_t is_connected)
 {
-    if(is_connected){
+    if (is_connected) {
         ps3Enable();
-    }else{
+    }
+    else {
         is_active = false;
     }
 }
 
-
-void ps3_packet_event( ps3_t ps3, ps3_event_t event )
+void ps3_packet_event(ps3_t ps3, ps3_event_t event)
 {
     // Trigger packet event, but if this is the very first packet
     // after connecting, trigger a connection event instead
-    if(is_active){
-        if(ps3_event_cb != NULL)
-        {
-            ps3_event_cb( ps3, event );
+    if (is_active) {
+        if (ps3_event_cb != NULL) {
+            ps3_event_cb(ps3, event);
         }
 
-        if(ps3_event_object_cb != NULL && ps3_event_object != NULL)
-        {
-            ps3_event_object_cb( ps3_event_object, ps3, event );
+        if (ps3_event_object_cb != NULL && ps3_event_object != NULL) {
+            ps3_event_object_cb(ps3_event_object, ps3, event);
         }
-    }else{
+    }
+    else {
         is_active = true;
 
-        if(ps3_connection_cb != NULL)
-        {
-            ps3_connection_cb( is_active );
+        if (ps3_connection_cb != NULL) {
+            ps3_connection_cb(is_active);
         }
 
-        if(ps3_connection_object_cb != NULL && ps3_connection_object != NULL)
-        {
-            ps3_connection_object_cb( ps3_connection_object, is_active );
+        if (ps3_connection_object_cb != NULL && ps3_connection_object != NULL) {
+            ps3_connection_object_cb(ps3_connection_object, is_active);
         }
     }
 }
