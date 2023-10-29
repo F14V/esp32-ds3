@@ -128,14 +128,14 @@ enum ps3_led_mask {
 /********************************************************************************/
 
 void ps3_connect_event(uint8_t is_connected);
-void ps3_packet_event( ps3_t ps3, ps3_event_t event );
+void ps3_packet_event(ps3_t ps3, ps3_event_t event);
 
 
 /********************************************************************************/
 /*                      P A R S E R   F U N C T I O N S                         */
 /********************************************************************************/
 
-void ps3_parse_packet( uint8_t *packet );
+void ps3_parse_packet(uint8_t *packet);
 
 
 /********************************************************************************/
@@ -152,6 +152,6 @@ void ps3_spp_deinit();
 
 void ps3_l2cap_init_services();
 void ps3_l2cap_deinit_services();
-void ps3_l2cap_send_hid( hid_cmd_t *hid_cmd, uint8_t len );
+void ps3_l2cap_send_hid(hid_cmd_t *hid_cmd, uint8_t len);
 
 #endif

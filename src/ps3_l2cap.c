@@ -23,16 +23,16 @@
 /*              L O C A L    F U N C T I O N     P R O T O T Y P E S            */
 /********************************************************************************/
 
-static void ps3_l2cap_init_service( const char *name, uint16_t psm, uint8_t security_id);
-static void ps3_l2cap_deinit_service( const char *name, uint16_t psm );
-static void ps3_l2cap_connect_ind_cback (BD_ADDR  bd_addr, uint16_t l2cap_cid, uint16_t psm, uint8_t l2cap_id);
-static void ps3_l2cap_connect_cfm_cback (uint16_t l2cap_cid, uint16_t result);
-static void ps3_l2cap_config_ind_cback (uint16_t l2cap_cid, tL2CAP_CFG_INFO *p_cfg);
-static void ps3_l2cap_config_cfm_cback (uint16_t l2cap_cid, tL2CAP_CFG_INFO *p_cfg);
-static void ps3_l2cap_disconnect_ind_cback (uint16_t l2cap_cid, bool ack_needed);
-static void ps3_l2cap_disconnect_cfm_cback (uint16_t l2cap_cid, uint16_t result);
-static void ps3_l2cap_data_ind_cback (uint16_t l2cap_cid, BT_HDR *p_msg);
-static void ps3_l2cap_congest_cback (uint16_t cid, bool congested);
+static void ps3_l2cap_init_service(const char *name, uint16_t psm, uint8_t security_id);
+static void ps3_l2cap_deinit_service(const char *name, uint16_t psm);
+static void ps3_l2cap_connect_ind_cback(BD_ADDR bd_addr, uint16_t l2cap_cid, uint16_t psm, uint8_t l2cap_id);
+static void ps3_l2cap_connect_cfm_cback(uint16_t l2cap_cid, uint16_t result);
+static void ps3_l2cap_config_ind_cback(uint16_t l2cap_cid, tL2CAP_CFG_INFO *p_cfg);
+static void ps3_l2cap_config_cfm_cback(uint16_t l2cap_cid, tL2CAP_CFG_INFO *p_cfg);
+static void ps3_l2cap_disconnect_ind_cback(uint16_t l2cap_cid, bool ack_needed);
+static void ps3_l2cap_disconnect_cfm_cback(uint16_t l2cap_cid, uint16_t result);
+static void ps3_l2cap_data_ind_cback(uint16_t l2cap_cid, BT_HDR *p_msg);
+static void ps3_l2cap_congest_cback(uint16_t cid, bool congested);
 
 
 /********************************************************************************/
@@ -73,8 +73,8 @@ bool is_connected = false;
 *******************************************************************************/
 void ps3_l2cap_init_services()
 {
-    ps3_l2cap_init_service( "PS3-HIDC", BT_PSM_HIDC, BTM_SEC_SERVICE_FIRST_EMPTY   );
-    ps3_l2cap_init_service( "PS3-HIDI", BT_PSM_HIDI, BTM_SEC_SERVICE_FIRST_EMPTY+1 );
+    ps3_l2cap_init_service("PS3-HIDC", BT_PSM_HIDC, BTM_SEC_SERVICE_FIRST_EMPTY + 0);
+    ps3_l2cap_init_service("PS3-HIDI", BT_PSM_HIDI, BTM_SEC_SERVICE_FIRST_EMPTY + 1);
 }
 
 /*******************************************************************************
@@ -88,10 +88,9 @@ void ps3_l2cap_init_services()
 *******************************************************************************/
 void ps3_l2cap_deinit_services()
 {
-    ps3_l2cap_deinit_service( "PS3-HIDC", BT_PSM_HIDC );
-    ps3_l2cap_deinit_service( "PS3-HIDI", BT_PSM_HIDI );
+    ps3_l2cap_deinit_service("PS3-HIDC", BT_PSM_HIDC);
+    ps3_l2cap_deinit_service("PS3-HIDI", BT_PSM_HIDI);
 }
-
 
 /*******************************************************************************
 **
@@ -102,23 +101,22 @@ void ps3_l2cap_deinit_services()
 ** Returns          void
 **
 *******************************************************************************/
-void ps3_l2cap_send_hid( hid_cmd_t *hid_cmd, uint8_t len )
+void ps3_l2cap_send_hid(hid_cmd_t *hid_cmd, uint8_t len)
 {
     uint8_t result;
-    BT_HDR     *p_buf;
+    BT_HDR *p_buf;
 
     p_buf = (BT_HDR *)osi_malloc(BT_DEFAULT_BUFFER_SIZE);
 
-    if( !p_buf ){
+    if (!p_buf)
         ESP_LOGE(PS3_TAG, "[%s] allocating buffer for sending the command failed", __func__);
-    }
 
-    p_buf->len = len + ( sizeof(*hid_cmd) - sizeof(hid_cmd->data) );
+    p_buf->len = len + (sizeof(*hid_cmd) - sizeof(hid_cmd->data));
     p_buf->offset = L2CAP_MIN_OFFSET;
 
-    memcpy ((uint8_t *)(p_buf + 1) + p_buf->offset, (uint8_t*)hid_cmd, p_buf->len);
+    memcpy((uint8_t *)(p_buf + 1) + p_buf->offset, (uint8_t *)hid_cmd, p_buf->len);
 
-    result = L2CA_DataWrite( PS3_L2CAP_ID_HIDC, p_buf );
+    result = L2CA_DataWrite(PS3_L2CAP_ID_HIDC, p_buf);
 
     if (result == L2CAP_DW_SUCCESS)
         ESP_LOGI(PS3_TAG, "[%s] sending command: success", __func__);
@@ -145,17 +143,17 @@ void ps3_l2cap_send_hid( hid_cmd_t *hid_cmd, uint8_t len )
 ** Returns          void
 **
 *******************************************************************************/
-static void ps3_l2cap_init_service( const char *name, uint16_t psm, uint8_t security_id)
+static void ps3_l2cap_init_service(const char *name, uint16_t psm, uint8_t security_id)
 {
     /* Register the PSM for incoming connections */
-    if (!L2CA_Register(psm, (tL2CAP_APPL_INFO *) &dyn_info)) {
+    if (!L2CA_Register(psm, (tL2CAP_APPL_INFO *)&dyn_info)) {
         ESP_LOGE(PS3_TAG, "%s Registering service %s failed", __func__, name);
         return;
     }
 
     /* Register with the Security Manager for our specific security level (none) */
-    if (!BTM_SetSecurityLevel (false, name, security_id, 0, psm, 0, 0)) {
-        ESP_LOGE (PS3_TAG, "%s Registering security service %s failed", __func__, name);
+    if (!BTM_SetSecurityLevel(false, name, security_id, 0, psm, 0, 0)) {
+        ESP_LOGE(PS3_TAG, "%s Registering security service %s failed", __func__, name);
         return;
     }
 
@@ -171,13 +169,12 @@ static void ps3_l2cap_init_service( const char *name, uint16_t psm, uint8_t secu
 ** Returns          void
 **
 *******************************************************************************/
-static void ps3_l2cap_deinit_service( const char *name, uint16_t psm )
+static void ps3_l2cap_deinit_service(const char *name, uint16_t psm)
 {
     /* Deregister the PSM from incoming connections */
     L2CA_Deregister(psm);
     ESP_LOGI(PS3_TAG, "[%s] Service %s Deinitialized", __func__, name);
 }
-
 
 /*******************************************************************************
 **
@@ -188,20 +185,19 @@ static void ps3_l2cap_deinit_service( const char *name, uint16_t psm )
 ** Returns          void
 **
 *******************************************************************************/
-static void ps3_l2cap_connect_ind_cback (BD_ADDR  bd_addr, uint16_t l2cap_cid, uint16_t psm, uint8_t l2cap_id)
+static void ps3_l2cap_connect_ind_cback(BD_ADDR bd_addr, uint16_t l2cap_cid, uint16_t psm, uint8_t l2cap_id)
 {
-    ESP_LOGI(PS3_TAG, "[%s] bd_addr: %s\n  l2cap_cid: 0x%02x\n  psm: %d\n  id: %d", __func__, bd_addr, l2cap_cid, psm, l2cap_id );
+    ESP_LOGI(PS3_TAG, "[%s] bd_addr: %s\n  l2cap_cid: 0x%02x\n  psm: %d\n  id: %d", __func__, bd_addr, l2cap_cid, psm, l2cap_id);
 
     /* Send connection pending response to the L2CAP layer. */
-    L2CA_ConnectRsp (bd_addr, l2cap_id, l2cap_cid, L2CAP_CONN_PENDING, L2CAP_CONN_PENDING);
+    L2CA_ConnectRsp(bd_addr, l2cap_id, l2cap_cid, L2CAP_CONN_PENDING, L2CAP_CONN_PENDING);
 
     /* Send response to the L2CAP layer. */
-    L2CA_ConnectRsp (bd_addr, l2cap_id, l2cap_cid, L2CAP_CONN_OK, L2CAP_CONN_OK);
+    L2CA_ConnectRsp(bd_addr, l2cap_id, l2cap_cid, L2CAP_CONN_OK, L2CAP_CONN_OK);
 
     /* Send a Configuration Request. */
-    L2CA_ConfigReq (l2cap_cid, &ps3_cfg_info);
+    L2CA_ConfigReq(l2cap_cid, &ps3_cfg_info);
 }
-
 
 /*******************************************************************************
 **
@@ -215,9 +211,8 @@ static void ps3_l2cap_connect_ind_cback (BD_ADDR  bd_addr, uint16_t l2cap_cid, u
 *******************************************************************************/
 static void ps3_l2cap_connect_cfm_cback(uint16_t l2cap_cid, uint16_t result)
 {
-    ESP_LOGI(PS3_TAG, "[%s] l2cap_cid: 0x%02x\n  result: %d", __func__, l2cap_cid, result );
+    ESP_LOGI(PS3_TAG, "[%s] l2cap_cid: 0x%02x\n  result: %d", __func__, l2cap_cid, result);
 }
-
 
 /*******************************************************************************
 **
@@ -231,17 +226,16 @@ static void ps3_l2cap_connect_cfm_cback(uint16_t l2cap_cid, uint16_t result)
 *******************************************************************************/
 static void ps3_l2cap_config_cfm_cback(uint16_t l2cap_cid, tL2CAP_CFG_INFO *p_cfg)
 {
-    ESP_LOGI(PS3_TAG, "[%s] l2cap_cid: 0x%02x\n  p_cfg->result: %d", __func__, l2cap_cid, p_cfg->result );
+    ESP_LOGI(PS3_TAG, "[%s] l2cap_cid: 0x%02x\n  p_cfg->result: %d", __func__, l2cap_cid, p_cfg->result);
 
     /* The PS3 controller is connected after    */
     /* receiving the second config confirmation */
     is_connected = l2cap_cid == PS3_L2CAP_ID_HIDI;
 
-    if(is_connected){
+    if (is_connected) {
         ps3Enable();
     }
 }
-
 
 /*******************************************************************************
 **
@@ -255,13 +249,12 @@ static void ps3_l2cap_config_cfm_cback(uint16_t l2cap_cid, tL2CAP_CFG_INFO *p_cf
 *******************************************************************************/
 static void ps3_l2cap_config_ind_cback(uint16_t l2cap_cid, tL2CAP_CFG_INFO *p_cfg)
 {
-    ESP_LOGI(PS3_TAG, "[%s] l2cap_cid: 0x%02x\n  p_cfg->result: %d\n  p_cfg->mtu_present: %d\n  p_cfg->mtu: %d", __func__, l2cap_cid, p_cfg->result, p_cfg->mtu_present, p_cfg->mtu );
+    ESP_LOGI(PS3_TAG, "[%s] l2cap_cid: 0x%02x\n  p_cfg->result: %d\n  p_cfg->mtu_present: %d\n  p_cfg->mtu: %d", __func__, l2cap_cid, p_cfg->result, p_cfg->mtu_present, p_cfg->mtu);
 
     p_cfg->result = L2CAP_CFG_OK;
 
     L2CA_ConfigRsp(l2cap_cid, p_cfg);
 }
-
 
 /*******************************************************************************
 **
@@ -275,9 +268,8 @@ static void ps3_l2cap_config_ind_cback(uint16_t l2cap_cid, tL2CAP_CFG_INFO *p_cf
 *******************************************************************************/
 static void ps3_l2cap_disconnect_ind_cback(uint16_t l2cap_cid, bool ack_needed)
 {
-    ESP_LOGI(PS3_TAG, "[%s] l2cap_cid: 0x%02x\n  ack_needed: %d", __func__, l2cap_cid, ack_needed );
+    ESP_LOGI(PS3_TAG, "[%s] l2cap_cid: 0x%02x\n  ack_needed: %d", __func__, l2cap_cid, ack_needed);
 }
-
 
 /*******************************************************************************
 **
@@ -291,9 +283,8 @@ static void ps3_l2cap_disconnect_ind_cback(uint16_t l2cap_cid, bool ack_needed)
 *******************************************************************************/
 static void ps3_l2cap_disconnect_cfm_cback(uint16_t l2cap_cid, uint16_t result)
 {
-    ESP_LOGI(PS3_TAG, "[%s] l2cap_cid: 0x%02x\n  result: %d", __func__, l2cap_cid, result );
+    ESP_LOGI(PS3_TAG, "[%s] l2cap_cid: 0x%02x\n  result: %d", __func__, l2cap_cid, result);
 }
-
 
 /*******************************************************************************
 **
@@ -307,14 +298,12 @@ static void ps3_l2cap_disconnect_cfm_cback(uint16_t l2cap_cid, uint16_t result)
 *******************************************************************************/
 static void ps3_l2cap_data_ind_cback(uint16_t l2cap_cid, BT_HDR *p_buf)
 {
-    if ( p_buf->len > 2 )
-    {
-        ps3_parse_packet( p_buf->data );
+    if (p_buf->len > 2) {
+        ps3_parse_packet(p_buf->data);
     }
 
-    osi_free( p_buf );
+    osi_free(p_buf);
 }
-
 
 /*******************************************************************************
 **
@@ -325,7 +314,7 @@ static void ps3_l2cap_data_ind_cback(uint16_t l2cap_cid, BT_HDR *p_buf)
 ** Returns          void
 **
 *******************************************************************************/
-static void ps3_l2cap_congest_cback (uint16_t l2cap_cid, bool congested)
+static void ps3_l2cap_congest_cback(uint16_t l2cap_cid, bool congested)
 {
-    ESP_LOGI(PS3_TAG, "[%s] l2cap_cid: 0x%02x\n  congested: %d", __func__, l2cap_cid, congested );
+    ESP_LOGI(PS3_TAG, "[%s] l2cap_cid: 0x%02x\n  congested: %d", __func__, l2cap_cid, congested);
 }
