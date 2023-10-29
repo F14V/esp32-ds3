@@ -50,7 +50,7 @@ void ps3_spp_init()
     }
     ESP_ERROR_CHECK( ret );
 
-    ESP_ERROR_CHECK(esp_bt_controller_mem_release(ESP_BT_MODE_BLE));
+    ESP_ERROR_CHECK(esp_bt_mem_release(ESP_BT_MODE_BLE));
 
     esp_bt_controller_config_t bt_cfg = BT_CONTROLLER_INIT_CONFIG_DEFAULT();
     if ((ret = esp_bt_controller_init(&bt_cfg)) != ESP_OK) {
@@ -79,7 +79,12 @@ void ps3_spp_init()
         return;
     }
 
-    if ((ret = esp_spp_init(ESP_SPP_MODE_CB)) != ESP_OK) {
+    esp_spp_cfg_t spp_cfg = {
+        .mode = ESP_SPP_MODE_CB,
+        .enable_l2cap_ertm = true,
+        .tx_buffer_size = ESP_SPP_MAX_TX_BUFFER_SIZE,
+    };
+    if ((ret = esp_spp_enhanced_init(&spp_cfg)) != ESP_OK) {
         ESP_LOGE(PS3_TAG, "%s spp init failed: %s\n", __func__, esp_err_to_name(ret));
         return;
     }
@@ -156,6 +161,6 @@ static void ps3_spp_callback(esp_spp_cb_event_t event, esp_spp_cb_param_t *param
         esp_bt_gap_set_scan_mode(ESP_BT_SCAN_MODE_CONNECTABLE);
 #endif
 
-        esp_spp_start_srv(ESP_SPP_SEC_NONE,ESP_SPP_ROLE_SLAVE, 0, PS3_SERVER_NAME);
+        esp_spp_start_srv(ESP_SPP_SEC_NONE, ESP_SPP_ROLE_SLAVE, 0, PS3_SERVER_NAME);
     }
 }
