@@ -115,13 +115,13 @@ typedef struct {
 /********************/
 
 typedef struct {
-    int16_t z;
+    uint16_t z;
 } ps3_sensor_gyroscope_t;
 
 typedef struct {
-    int16_t x;
-    int16_t y;
-    int16_t z;
+    uint16_t x;
+    uint16_t y;
+    uint16_t z;
 } ps3_sensor_accelerometer_t;
 
 typedef struct {
