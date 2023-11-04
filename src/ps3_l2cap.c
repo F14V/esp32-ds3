@@ -105,7 +105,7 @@ void ps3_l2cap_send_hid(hid_cmd_t *hid_cmd, uint8_t len)
     uint8_t result;
     BT_HDR *p_buf;
 
-    p_buf = (BT_HDR *)osi_malloc(BT_DEFAULT_BUFFER_SIZE);
+    p_buf = (BT_HDR *)osi_malloc(BT_SMALL_BUFFER_SIZE);
 
     if (!p_buf)
         ESP_LOGE(PS3_TAG, "[%s] allocating buffer for sending the command failed", __func__);
