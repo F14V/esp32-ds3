@@ -5,28 +5,44 @@
 #include "include/ps3.h"
 #include "include/ps3_int.h"
 
+
 /********************************************************************************/
 /*                              C O N S T A N T S                               */
 /********************************************************************************/
 
-static const uint8_t hid_cmd_payload_ps3_enable[] = { 0x42, 0x03, 0x00, 0x00 };
-static const uint8_t hid_cmd_payload_led_arguments[] = { 0xff, 0x27, 0x10, 0x00, 0x32 };
+static const uint8_t hid_cmd_payload_report_enable[] = { 0x42, 0x03, 0x00, 0x00 };
+// static const uint8_t hid_cmd_payload_led_arguments[] = { 0xFF, 0x27, 0x10, 0x00, 0x32 };
 
 
 /********************************************************************************/
 /*                         L O C A L    V A R I A B L E S                       */
 /********************************************************************************/
 
+/* Connection callbacks */
 static ps3_connection_callback_t ps3_connection_cb = NULL;
 static ps3_connection_object_callback_t ps3_connection_object_cb = NULL;
 static void *ps3_connection_object = NULL;
 
-
+/* Event callbacks */
 static ps3_event_callback_t ps3_event_cb = NULL;
 static ps3_event_object_callback_t ps3_event_object_cb = NULL;
 static void *ps3_event_object = NULL;
 
-static bool is_active = false;
+/* Status flags */
+static bool ps3_is_connected = false;
+static bool ps3_is_active = false;
+
+/* Input and output data */
+static ps3_input_data_t ps3_input_data;
+static ps3_output_data_t ps3_output_data;
+
+
+/********************************************************************************/
+/*              L O C A L    F U N C T I O N     P R O T O T Y P E S            */
+/********************************************************************************/
+
+static void ps3_handle_connect_event(uint8_t is_connected);
+static void ps3_handle_data_event(ps3_input_data_t *const p_data, ps3_event_t *const p_event);
 
 
 /********************************************************************************/
@@ -80,12 +96,30 @@ void ps3Deinit()
 *******************************************************************************/
 bool ps3IsConnected()
 {
-    return is_active;
+    return ps3_is_active;
 }
 
 /*******************************************************************************
 **
-** Function         ps3Enable
+** Function         ps3HandleConnection
+**
+** Description      Handle the connection of the PS3 controller.
+**
+**
+** Returns          void
+**
+*******************************************************************************/
+void ps3HandleConnection(bool is_connected)
+{
+    ps3_is_connected = is_connected;
+
+    /* Process the connection event */
+    ps3_handle_connect_event(ps3_is_connected);
+}
+
+/*******************************************************************************
+**
+** Function         ps3EnableReport
 **
 ** Description      This triggers the PS3 controller to start continually
 **                  sending its data.
@@ -94,22 +128,22 @@ bool ps3IsConnected()
 ** Returns          void
 **
 *******************************************************************************/
-void ps3Enable()
+void ps3EnableReport()
 {
-    hid_cmd_t hid_cmd;
-    uint16_t len = sizeof(hid_cmd_payload_ps3_enable);
+    hid_cmd_t hid_cmd = {
+        .code = hid_cmd_code_set_report | hid_cmd_code_type_feature,
+        .identifier = hid_cmd_identifier_ps3_enable,
+    };
+    uint16_t len = sizeof(hid_cmd_payload_report_enable);
 
-    hid_cmd.code = hid_cmd_code_set_report | hid_cmd_code_type_feature;
-    hid_cmd.identifier = hid_cmd_identifier_ps3_enable;
+    memcpy(hid_cmd.data, hid_cmd_payload_report_enable, len);
 
-    memcpy(hid_cmd.data, hid_cmd_payload_ps3_enable, len);
-
-    ps3_l2cap_send_hid(&hid_cmd, len);
+    ps3_l2cap_send_data((uint8_t *)&hid_cmd, len + 2U);
 }
 
 /*******************************************************************************
 **
-** Function         ps3Cmd
+** Function         ps3SendCommand
 **
 ** Description      Send a command to the PS3 controller.
 **
@@ -117,80 +151,109 @@ void ps3Enable()
 ** Returns          void
 **
 *******************************************************************************/
-void ps3Cmd(ps3_cmd_t cmd)
+void ps3SendCommand()
 {
-    hid_cmd_t hid_cmd = {.data = {0}};
+    hid_cmd_t hid_cmd = {
+        .code = hid_cmd_code_set_report | hid_cmd_code_type_output,
+        .identifier = hid_cmd_identifier_ps3_control,
+        .data = {0},
+    };
     uint16_t len = sizeof(hid_cmd.data);
 
-    hid_cmd.code = hid_cmd_code_set_report | hid_cmd_code_type_output;
-    hid_cmd.identifier = hid_cmd_identifier_ps3_control;
+    /* Parse the output data */
+    ps3_parse_output(&ps3_output_data, hid_cmd.data);
 
-    hid_cmd.data[ps3_control_packet_index_rumble_right_duration]  = cmd.rumble_right_duration;
-    hid_cmd.data[ps3_control_packet_index_rumble_right_intensity] = cmd.rumble_right_intensity;
-    hid_cmd.data[ps3_control_packet_index_rumble_left_duration]   = cmd.rumble_left_duration;
-    hid_cmd.data[ps3_control_packet_index_rumble_left_intensity]  = cmd.rumble_left_intensity;
+    /* Send the hid command */
+    ps3_l2cap_send_data((uint8_t *)&hid_cmd, len + 2U);
+}
 
-    hid_cmd.data[ps3_control_packet_index_leds] = 0;
-    if (cmd.led1) hid_cmd.data[ps3_control_packet_index_leds] |= ps3_led_mask_led1;
-    if (cmd.led2) hid_cmd.data[ps3_control_packet_index_leds] |= ps3_led_mask_led2;
-    if (cmd.led3) hid_cmd.data[ps3_control_packet_index_leds] |= ps3_led_mask_led3;
-    if (cmd.led4) hid_cmd.data[ps3_control_packet_index_leds] |= ps3_led_mask_led4;
+/*******************************************************************************
+**
+** Function         ps3ReceiveData
+**
+** Description      Process the incoming data from the PS3 controller.
+**
+**
+** Returns          void
+**
+*******************************************************************************/
+void ps3ReceiveData(uint8_t p_data[const])
+{
+    hid_cmd_t *p_hid_cmd = (hid_cmd_t *)p_data;
+    if (p_hid_cmd->code == (hid_cmd_code_data | hid_cmd_code_type_input))
+    {
+        // if (hid_cmd->identifier == hid_cmd_identifier_ps3_control)
+        static ps3_event_t ps3_event;
 
-    if (cmd.led1) memcpy(hid_cmd.data + ps3_control_packet_index_led1_arguments, hid_cmd_payload_led_arguments, sizeof(hid_cmd_payload_led_arguments));
-    if (cmd.led2) memcpy(hid_cmd.data + ps3_control_packet_index_led2_arguments, hid_cmd_payload_led_arguments, sizeof(hid_cmd_payload_led_arguments));
-    if (cmd.led3) memcpy(hid_cmd.data + ps3_control_packet_index_led3_arguments, hid_cmd_payload_led_arguments, sizeof(hid_cmd_payload_led_arguments));
-    if (cmd.led4) memcpy(hid_cmd.data + ps3_control_packet_index_led4_arguments, hid_cmd_payload_led_arguments, sizeof(hid_cmd_payload_led_arguments));
+        /* Save the previous data */
+        ps3_input_data_t prev_data = ps3_input_data;
 
-    ps3_l2cap_send_hid(&hid_cmd, len);
+        /* Parse the input data */
+        ps3_parse_input(p_hid_cmd->data, &ps3_input_data);
+
+        /* Parse the event */
+        ps3_parse_event(&prev_data, &ps3_input_data, &ps3_event);
+
+        /* Process the data event */
+        ps3_handle_data_event(&ps3_input_data, &ps3_event);
+    }
 }
 
 /*******************************************************************************
 **
 ** Function         ps3SetLed
 **
-** Description      Sets the LEDs on the PS3 controller to the player
-**                  number. Up to 10 players are supported.
+** Description      Sets the LEDs on the PS3 controller
 **
 **
 ** Returns          void
 **
 *******************************************************************************/
-void ps3SetLed(uint8_t player)
+void ps3SetLed(uint8_t num, bool val)
 {
-    ps3_cmd_t cmd = {0};
-    ps3SetLedCmd(&cmd, player);
-    ps3Cmd(cmd);
+    switch (num)
+    {
+    case 0:
+        ps3SetLeds(val, val, val, val);
+        break;
+    case 1:
+        ps3_output_data.led.led1 = val;
+        break;
+    case 2:
+        ps3_output_data.led.led2 = val;
+        break;
+    case 3:
+        ps3_output_data.led.led3 = val;
+        break;
+    case 4:
+        ps3_output_data.led.led4 = val;
+        break;
+    
+    default:
+        break;
+    }
+    ps3SendCommand();
+}
+void ps3SetLeds(bool led1, bool led2, bool led3, bool led4)
+{
+    ps3_output_data.led = (ps3_led_t){led1, led2, led3, led4};
+    ps3SendCommand();
 }
 
 /*******************************************************************************
 **
-** Function         ps3SetLed
+** Function         ps3SetRumble
 **
-** Description      Sets the LED bits on the PS3 controller command to the
-**                  player number. Up to 10 players are supported.
+** Description      Sets the Rumble on the PS3 controller
 **
 **
 ** Returns          void
 **
 *******************************************************************************/
-void ps3SetLedCmd(ps3_cmd_t *cmd, uint8_t player)
+void ps3SetRumble(uint8_t right_duration, uint8_t right_intensity, uint8_t left_duration, uint8_t left_intensity)
 {
-    //           led4  led3  led2  led1
-    // player 1                    1
-    // player 2              1
-    // player 3        1
-    // player 4  1
-    // player 5  1                 1
-    // player 6  1           1
-    // player 7  1     1
-    // player 8  1     1           1
-    // player 9  1     1     1
-    // player 10 1     1     1     1
-
-    if ((cmd->led4 = player >= 4) != 0) player -= 4;
-    if ((cmd->led3 = player >= 3) != 0) player -= 3;
-    if ((cmd->led2 = player >= 2) != 0) player -= 2;
-    if ((cmd->led1 = player >= 1) != 0) player -= 1;
+    ps3_output_data.rumble = (ps3_rumble_t){right_duration, right_intensity, left_duration, left_intensity};
+    ps3SendCommand();
 }
 
 /*******************************************************************************
@@ -220,10 +283,10 @@ void ps3SetConnectionCallback(ps3_connection_callback_t cb)
 ** Returns          void
 **
 *******************************************************************************/
-void ps3SetConnectionObjectCallback(void *object, ps3_connection_object_callback_t cb)
+void ps3SetConnectionObjectCallback(void *const p_object, ps3_connection_object_callback_t cb)
 {
     ps3_connection_object_cb = cb;
-    ps3_connection_object = object;
+    ps3_connection_object = p_object;
 }
 
 /*******************************************************************************
@@ -251,10 +314,10 @@ void ps3SetEventCallback(ps3_event_callback_t cb)
 ** Returns          void
 **
 *******************************************************************************/
-void ps3SetEventObjectCallback(void *object, ps3_event_object_callback_t cb)
+void ps3SetEventObjectCallback(void *const p_object, ps3_event_object_callback_t cb)
 {
     ps3_event_object_cb = cb;
-    ps3_event_object = object;
+    ps3_event_object = p_object;
 }
 
 /*******************************************************************************
@@ -281,38 +344,39 @@ void ps3SetBluetoothMacAddress(const uint8_t *mac)
 /*                      L O C A L    F U N C T I O N S                          */
 /********************************************************************************/
 
-void ps3_connect_event(uint8_t is_connected)
+static void ps3_handle_connect_event(uint8_t is_connected)
 {
     if (is_connected) {
-        ps3Enable();
+        if (!ps3_is_active) {
+            ps3EnableReport();
+        }
     }
     else {
-        is_active = false;
+        ps3_is_active = false;
     }
 }
 
-void ps3_packet_event(ps3_t ps3, ps3_event_t event)
+static void ps3_handle_data_event(ps3_input_data_t *const p_data, ps3_event_t *const p_event)
 {
-    // Trigger packet event, but if this is the very first packet
-    // after connecting, trigger a connection event instead
-    if (is_active) {
+    // Trigger packet event, but if this is the very first packet after connecting, trigger a connection event instead
+    if (ps3_is_active) {
         if (ps3_event_cb != NULL) {
-            ps3_event_cb(ps3, event);
+            ps3_event_cb(p_data, p_event);
         }
 
         if (ps3_event_object_cb != NULL && ps3_event_object != NULL) {
-            ps3_event_object_cb(ps3_event_object, ps3, event);
+            ps3_event_object_cb(ps3_event_object, p_data, p_event);
         }
     }
     else {
-        is_active = true;
+        ps3_is_active = true;
 
         if (ps3_connection_cb != NULL) {
-            ps3_connection_cb(is_active);
+            ps3_connection_cb(ps3_is_active);
         }
 
         if (ps3_connection_object_cb != NULL && ps3_connection_object != NULL) {
-            ps3_connection_object_cb(ps3_connection_object, is_active);
+            ps3_connection_object_cb(ps3_connection_object, ps3_is_active);
         }
     }
 }

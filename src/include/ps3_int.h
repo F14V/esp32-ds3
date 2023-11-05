@@ -8,19 +8,19 @@
 #ifndef ARDUINO_ARCH_ESP32
 
 #ifndef CONFIG_BT_ENABLED
-#error "The ESP32-PS3 module requires the Bluetooth component to be enabled in the project's menuconfig"
+#error "The ESP32-PS3 component requires the Bluetooth component to be enabled in the project's menuconfig"
 #endif
 
 #ifndef CONFIG_BLUEDROID_ENABLED
-#error "The ESP32-PS3 module requires Bluedroid to be enabled in the project's menuconfig"
+#error "The ESP32-PS3 component requires Bluedroid to be enabled in the project's menuconfig"
 #endif
 
 #ifndef CONFIG_CLASSIC_BT_ENABLED
-#error "The ESP32-PS3 module requires Classic Bluetooth to be enabled in the project's menuconfig"
+#error "The ESP32-PS3 component requires Classic Bluetooth to be enabled in the project's menuconfig"
 #endif
 
 #ifndef CONFIG_BT_L2CAP_ENABLED
-#error "The ESP32-PS3 module requires Classic Bluetooth's L2CAP to be enabled in the project's menuconfig"
+#error "The ESP32-PS3 component requires Classic Bluetooth's L2CAP to be enabled in the project's menuconfig"
 #endif
 
 /** Check the configured blueooth mode */
@@ -29,7 +29,7 @@
 #elif defined CONFIG_BTDM_CONTROLLER_MODE_BR_EDR_ONLY
 #define BT_MODE ESP_BT_MODE_CLASSIC_BT
 #else
-#error "The selected Bluetooth controller mode is not supported by the ESP32-PS3 module"
+#error "The selected Bluetooth controller mode is not supported by the ESP32-PS3 component"
 #endif
 
 #endif // ARDUINO_ARCH_ESP32
@@ -44,58 +44,34 @@
 /********************************************************************************/
 
 enum hid_cmd_code {
+    /* Report */
+    hid_cmd_code_get_report   = 0x40,
     hid_cmd_code_set_report   = 0x50,
+    /* Protocol */
+    hid_cmd_code_get_protocol = 0x60,
+    hid_cmd_code_set_protocol = 0x70,
+    /* Idle */
+    hid_cmd_code_get_idle     = 0x80,
+    hid_cmd_code_set_idle     = 0x90,
+    /* Data */
+    hid_cmd_code_data         = 0xA0,
+    hid_cmd_code_datc         = 0xB0,
+    /* Type (for report and data) */
+    hid_cmd_code_type_input   = 0x01,
     hid_cmd_code_type_output  = 0x02,
-    hid_cmd_code_type_feature = 0x03
+    hid_cmd_code_type_feature = 0x03,
 };
 
 enum hid_cmd_identifier {
-    hid_cmd_identifier_ps3_enable  = 0xf4,
-    hid_cmd_identifier_ps3_control = 0x01
+    hid_cmd_identifier_ps3_enable  = 0xF4,
+    hid_cmd_identifier_ps3_control = 0x01,
 };
-
 
 typedef struct {
-  uint8_t code;
-  uint8_t identifier;
-  uint8_t data[PS3_REPORT_BUFFER_SIZE];
-
+    uint8_t code;
+    uint8_t identifier;
+    uint8_t data[PS3_REPORT_BUFFER_SIZE];
 } hid_cmd_t;
-
-enum ps3_control_packet_index {
-    ps3_control_packet_index_rumble_right_duration = 1,
-    ps3_control_packet_index_rumble_right_intensity = 2,
-    ps3_control_packet_index_rumble_left_duration = 3,
-    ps3_control_packet_index_rumble_left_intensity = 4,
-
-    ps3_control_packet_index_leds = 9,
-    ps3_control_packet_index_led4_arguments = 10,
-    ps3_control_packet_index_led3_arguments = 15,
-    ps3_control_packet_index_led2_arguments = 20,
-    ps3_control_packet_index_led1_arguments = 25
-};
-
-enum ps3_led_mask {
-    ps3_led_mask_led1 = 1 << 1,
-    ps3_led_mask_led2 = 1 << 2,
-    ps3_led_mask_led3 = 1 << 3,
-    ps3_led_mask_led4 = 1 << 4,
-};
-
-
-/********************************************************************************/
-/*                     C A L L B A C K   F U N C T I O N S                      */
-/********************************************************************************/
-
-void ps3_connect_event(uint8_t is_connected);
-void ps3_packet_event(ps3_t ps3, ps3_event_t event);
-
-
-/********************************************************************************/
-/*                      P A R S E R   F U N C T I O N S                         */
-/********************************************************************************/
-
-void ps3_parse_packet(uint8_t *packet);
 
 
 /********************************************************************************/
@@ -112,6 +88,15 @@ void ps3_bt_deinit();
 
 void ps3_l2cap_init_services();
 void ps3_l2cap_deinit_services();
-void ps3_l2cap_send_hid(hid_cmd_t *hid_cmd, uint8_t len);
+void ps3_l2cap_send_data(uint8_t p_data[const], uint16_t len);
+
+
+/********************************************************************************/
+/*                      P A R S E R   F U N C T I O N S                         */
+/********************************************************************************/
+
+void ps3_parse_input(uint8_t p_packet[const], ps3_input_data_t *const p_data);
+void ps3_parse_output(ps3_output_data_t *const p_data, uint8_t p_packet[const]);
+void ps3_parse_event(ps3_input_data_t *const p_prev, ps3_input_data_t *const p_data, ps3_event_t *const p_event);
 
 #endif

@@ -13,6 +13,8 @@
 
 #define PS3_TAG "PS3_L2CAP"
 
+#define PS3_TAG_HIDC "PS3-HIDC"
+#define PS3_TAG_HIDI "PS3-HIDI"
 
 #define PS3_L2CAP_ID_HIDC 0x40
 #define PS3_L2CAP_ID_HIDI 0x41
@@ -72,8 +74,8 @@ static bool ps3_l2cap_hidi_connected = false;
 *******************************************************************************/
 void ps3_l2cap_init_services()
 {
-    ps3_l2cap_init_service("PS3-HIDC", BT_PSM_HIDC, BTM_SEC_SERVICE_FIRST_EMPTY + 0);
-    ps3_l2cap_init_service("PS3-HIDI", BT_PSM_HIDI, BTM_SEC_SERVICE_FIRST_EMPTY + 1);
+    ps3_l2cap_init_service(PS3_TAG_HIDC, BT_PSM_HIDC, BTM_SEC_SERVICE_FIRST_EMPTY + 0);
+    ps3_l2cap_init_service(PS3_TAG_HIDI, BT_PSM_HIDI, BTM_SEC_SERVICE_FIRST_EMPTY + 1);
 }
 
 /*******************************************************************************
@@ -87,22 +89,22 @@ void ps3_l2cap_init_services()
 *******************************************************************************/
 void ps3_l2cap_deinit_services()
 {
-    ps3_l2cap_deinit_service("PS3-HIDC", BT_PSM_HIDC);
-    ps3_l2cap_deinit_service("PS3-HIDI", BT_PSM_HIDI);
+    ps3_l2cap_deinit_service(PS3_TAG_HIDC, BT_PSM_HIDC);
+    ps3_l2cap_deinit_service(PS3_TAG_HIDI, BT_PSM_HIDI);
     ps3_l2cap_hidc_connected = false;
     ps3_l2cap_hidi_connected = false;
 }
 
 /*******************************************************************************
 **
-** Function         ps3_l2cap_send_hid
+** Function         ps3_l2cap_send_data
 **
 ** Description      This function sends the HID command using the L2CAP service.
 **
 ** Returns          void
 **
 *******************************************************************************/
-void ps3_l2cap_send_hid(hid_cmd_t *hid_cmd, uint8_t len)
+void ps3_l2cap_send_data(uint8_t p_data[const], uint16_t len)
 {
     uint8_t result;
     BT_HDR *p_buf;
@@ -112,10 +114,10 @@ void ps3_l2cap_send_hid(hid_cmd_t *hid_cmd, uint8_t len)
     if (!p_buf)
         ESP_LOGE(PS3_TAG, "[%s] allocating buffer for sending the command failed", __func__);
 
-    p_buf->len = len + (sizeof(*hid_cmd) - sizeof(hid_cmd->data));
+    p_buf->len = len;
     p_buf->offset = L2CAP_MIN_OFFSET;
 
-    memcpy((uint8_t *)(p_buf + 1) + p_buf->offset, (uint8_t *)hid_cmd, p_buf->len);
+    memcpy(&p_buf->data[p_buf->offset], p_data, len);
 
     result = L2CA_DataWrite(PS3_L2CAP_ID_HIDC, p_buf);
 
@@ -264,7 +266,7 @@ static void ps3_l2cap_config_cfm_cb(uint16_t l2cap_cid, tL2CAP_CFG_INFO *p_cfg)
         }
         /* The PS3 controller is connected after receiving both config confirmation */
         if (ps3_l2cap_hidc_connected && ps3_l2cap_hidi_connected) {
-            ps3Enable();
+            ps3HandleConnection(true);
         }
     }
 }
@@ -295,7 +297,7 @@ static void ps3_l2cap_disconnect_ind_cb(uint16_t l2cap_cid, bool ack_needed)
     }
     /* The device requests disconnect */
     if (!ps3_l2cap_hidc_connected || !ps3_l2cap_hidi_connected) {
-        
+        ps3HandleConnection(false);
     }
 }
 
@@ -322,7 +324,7 @@ static void ps3_l2cap_disconnect_cfm_cb(uint16_t l2cap_cid, uint16_t result)
         }
         /* The device acknowledges disconnect */
         if (!ps3_l2cap_hidc_connected || !ps3_l2cap_hidi_connected) {
-            
+            ps3HandleConnection(false);
         }
     };
 }
@@ -342,7 +344,7 @@ static void ps3_l2cap_data_ind_cb(uint16_t l2cap_cid, BT_HDR *p_buf)
     /* Check if data is received via the HID interrupt channel */
     if (l2cap_cid == PS3_L2CAP_ID_HIDI) {
         if (p_buf->len > 2) {
-            ps3_parse_packet(p_buf->data);
+            ps3ReceiveData(&p_buf->data[p_buf->offset]);
         }
     }
 

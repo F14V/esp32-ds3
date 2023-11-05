@@ -12,236 +12,161 @@
 /*                            L O C A L    T Y P E S                            */
 /********************************************************************************/
 
-enum ps3_packet_index {
-    ps3_packet_index_buttons_raw = 12,
+/* Input report struct */
+typedef struct __attribute__((__packed__)) {
+    /* Unknown */
+    uint8_t unk0[1];
+    /* Button */
+    ps3_button_t button;
+    /* Unknown */
+    uint8_t unk1[1];
+    /* Stick */
+    ps3_stick_t stick;
+    /* Unknown */
+    uint8_t unk2[4];
+    /* Analog */
+    ps3_analog_t analog;
+    /* Unknown */
+    uint8_t unk3[3];
+    /* Status */
+    ps3_status_t status;
+    /* Unknown */
+    uint8_t unk4[9];
+    /* Sensor */
+    ps3_sensor_t sensor;
+} ps3_input_report_t;
 
-    ps3_packet_index_analog_stick_lx = 16,
-    ps3_packet_index_analog_stick_ly = 17,
-    ps3_packet_index_analog_stick_rx = 18,
-    ps3_packet_index_analog_stick_ry = 19,
+/* Led payload struct */
+#define PS3_LED_PAYLOAD {0xFF, 0x27, 0x10, 0x00, 0x32}
+typedef struct {
+    uint8_t led4[5];
+    uint8_t led3[5];
+    uint8_t led2[5];
+    uint8_t led1[5];
+} ps3_led_payload_t;
 
-    ps3_packet_index_analog_button_up = 24,
-    ps3_packet_index_analog_button_right = 25,
-    ps3_packet_index_analog_button_down = 26,
-    ps3_packet_index_analog_button_left = 27,
+/* Output report struct */
+typedef struct __attribute__((__packed__)) {
+    uint8_t unk0[1];
+    ps3_rumble_t rumble;
+    uint8_t unk1[4];
+    ps3_led_t led;
+    ps3_led_payload_t payload;
+    uint8_t unk2[5];
+} ps3_output_report_t;
 
-    ps3_packet_index_analog_button_l2 = 28,
-    ps3_packet_index_analog_button_r2 = 29,
-    ps3_packet_index_analog_button_l1 = 30,
-    ps3_packet_index_analog_button_r1 = 31,
-
-    ps3_packet_index_analog_button_triangle = 32,
-    ps3_packet_index_analog_button_circle = 33,
-    ps3_packet_index_analog_button_cross = 34,
-    ps3_packet_index_analog_button_square = 35,
-
-    ps3_packet_index_status = 39,
-
-    ps3_packet_index_sensor_accelerometer_x = 51,
-    ps3_packet_index_sensor_accelerometer_y = 53,
-    ps3_packet_index_sensor_accelerometer_z = 55,
-    ps3_packet_index_sensor_gyroscope_z = 57
-};
-
-enum ps3_button_mask {
-    ps3_button_mask_select   = 1 << 0,
-    ps3_button_mask_l3       = 1 << 1,
-    ps3_button_mask_r3       = 1 << 2,
-    ps3_button_mask_start    = 1 << 3,
-
-    ps3_button_mask_up       = 1 << 4,
-    ps3_button_mask_right    = 1 << 5,
-    ps3_button_mask_down     = 1 << 6,
-    ps3_button_mask_left     = 1 << 7,
-
-    ps3_button_mask_l2       = 1 << 8,
-    ps3_button_mask_r2       = 1 << 9,
-    ps3_button_mask_l1       = 1 << 10,
-    ps3_button_mask_r1       = 1 << 11,
-
-    ps3_button_mask_triangle = 1 << 12,
-    ps3_button_mask_circle   = 1 << 13,
-    ps3_button_mask_cross    = 1 << 14,
-    ps3_button_mask_square   = 1 << 15,
-
-    ps3_button_mask_ps       = 1 << 16,
-
-    ps3_button_mask_fields = 
-        ps3_button_mask_select | ps3_button_mask_l3 | ps3_button_mask_r3 | ps3_button_mask_start |
-        ps3_button_mask_up | ps3_button_mask_right | ps3_button_mask_down | ps3_button_mask_left |
-        ps3_button_mask_l2 | ps3_button_mask_r2 | ps3_button_mask_l1 | ps3_button_mask_r1 |
-        ps3_button_mask_triangle | ps3_button_mask_circle | ps3_button_mask_cross | ps3_button_mask_square |
-        ps3_button_mask_ps
-};
-
-enum ps3_status_mask {
-    ps3_status_mask_rumbling = 0x02,
-    ps3_status_mask_bluetooth = 0x04
-};
-
-
-/********************************************************************************/
-/*              L O C A L    F U N C T I O N     P R O T O T Y P E S            */
-/********************************************************************************/
-
-static ps3_sensor_t ps3_parse_packet_sensor(uint8_t *packet);
-static ps3_status_t ps3_parse_packet_status(uint8_t *packet);
-static ps3_analog_stick_t ps3_parse_packet_analog_stick(uint8_t *packet);
-static ps3_analog_button_t ps3_parse_packet_analog_button(uint8_t *packet);
-static ps3_button_t ps3_parse_packet_buttons(uint8_t *packet);
-static ps3_event_t ps3_parse_event(ps3_t prev, ps3_t cur);
-
-/********************************************************************************/
-/*                         L O C A L    V A R I A B L E S                       */
-/********************************************************************************/
-
-static ps3_t ps3;
 
 /********************************************************************************/
 /*                      P U B L I C    F U N C T I O N S                        */
 /********************************************************************************/
 
-void ps3_parse_packet(uint8_t *packet)
+/*******************************************************************************
+**
+** Function         ps3_parse_input
+**
+** Description      Parse the input packet into input data
+**
+** Returns          void
+**
+*******************************************************************************/
+void ps3_parse_input(uint8_t p_packet[const], ps3_input_data_t *const p_data)
 {
-    ps3_t prev_ps3 = ps3;
-    ps3_event_t ps3_event;
+    /* Cast input report pointer */
+    ps3_input_report_t *p_report = (ps3_input_report_t *)p_packet;
 
-    ps3.button        = ps3_parse_packet_buttons(packet);
-    ps3.analog.stick  = ps3_parse_packet_analog_stick(packet);
-#ifndef PS3_PARSE_SKIP_ANALOG_BUTTON
-    ps3.analog.button = ps3_parse_packet_analog_button(packet);
+    /* Parse input data */
+    p_data->button = p_report->button;
+    p_data->stick = p_report->stick;
+    /* Remove offset */
+    p_data->stick.lx -= (INT8_MAX + 1);
+    p_data->stick.ly -= (INT8_MAX + 1);
+    p_data->stick.rx -= (INT8_MAX + 1);
+    p_data->stick.ry -= (INT8_MAX + 1);
+#ifndef PS3_PARSE_SKIP_ANALOG
+    p_data->analog = p_report->analog;
 #endif
+    p_data->status = p_report->status;
 #ifndef PS3_PARSE_SKIP_SENSOR
-    ps3.sensor        = ps3_parse_packet_sensor(packet);
+    p_data->sensor = p_report->sensor;
+    /* Remove offset */
+    p_data->sensor.ax -= (INT16_MAX + 1);
+    p_data->sensor.ay -= (INT16_MAX + 1);
+    p_data->sensor.az -= (INT16_MAX + 1);
+    p_data->sensor.gz -= (INT16_MAX + 1);
 #endif
-    ps3.status        = ps3_parse_packet_status(packet);
-
-    ps3_event         = ps3_parse_event(prev_ps3, ps3);
-
-    ps3_packet_event(ps3, ps3_event);
 }
 
-
-/********************************************************************************/
-/*                      L O C A L    F U N C T I O N S                          */
-/********************************************************************************/
-
-/******************/
-/*    E V E N T   */
-/******************/
-static ps3_event_t ps3_parse_event(ps3_t prev, ps3_t cur)
+/*******************************************************************************
+**
+** Function         ps3_parse_output
+**
+** Description      Parse the output data into output packet
+**
+** Returns          void
+**
+*******************************************************************************/
+void ps3_parse_output(ps3_output_data_t *const p_data, uint8_t p_packet[const])
 {
-    ps3_event_t ps3_event;
+    /* Cast output report pointer */
+    ps3_output_report_t *p_report = (ps3_output_report_t *)p_packet;
 
-    /* Button down events */
-    ps3_event.button_down.fields = ~prev.button.fields & cur.button.fields;
+    /* Parse output data */
+    p_report->rumble = p_data->rumble;
+    p_report->led = p_data->led;
+    p_report->payload = (ps3_led_payload_t){PS3_LED_PAYLOAD, PS3_LED_PAYLOAD, PS3_LED_PAYLOAD, PS3_LED_PAYLOAD};
+}
 
-    /* Button up events */
-    ps3_event.button_up.fields   = prev.button.fields & ~cur.button.fields;
+/*******************************************************************************
+**
+** Function         ps3_parse_event
+**
+** Description      Parse the input data and previous data into event report
+**
+** Returns          void
+**
+*******************************************************************************/
+void ps3_parse_event(ps3_input_data_t *const p_prev, ps3_input_data_t *const p_data, ps3_event_t *const p_event)
+{
+    /* Button events */
+    uint8_t *p_old = (uint8_t *)&p_prev->button;
+    uint8_t *p_new = (uint8_t *)&p_data->button;
+    uint8_t *p_evt;
 
+    /* Button down */
+    p_evt = (uint8_t *)&p_event->button_down;
+    p_evt[0] = ~p_old[0] & p_new[0];
+    p_evt[1] = ~p_old[1] & p_new[1];
+    p_evt[2] = ~p_old[2] & p_new[2];
+
+    /* Button up */
+    p_evt = (uint8_t *)&p_event->button_up;
+    p_evt[0] = p_old[0] & ~p_new[0];
+    p_evt[1] = p_old[1] & ~p_new[1];
+    p_evt[2] = p_old[2] & ~p_new[2];
+
+    /* Stick events */
+    p_event->stick_changed.lx        = p_data->stick.lx - p_prev->stick.lx;
+    p_event->stick_changed.ly        = p_data->stick.ly - p_prev->stick.ly;
+    p_event->stick_changed.rx        = p_data->stick.rx - p_prev->stick.rx;
+    p_event->stick_changed.ry        = p_data->stick.ry - p_prev->stick.ry;
+
+#ifndef PS3_PARSE_SKIP_ANALOG
 #ifndef PS3_PARSE_SKIP_ANALOG_CHANGED
     /* Analog events */
-    ps3_event.analog_changed.stick.lx        = cur.analog.stick.lx - prev.analog.stick.lx;
-    ps3_event.analog_changed.stick.ly        = cur.analog.stick.ly - prev.analog.stick.ly;
-    ps3_event.analog_changed.stick.rx        = cur.analog.stick.rx - prev.analog.stick.rx;
-    ps3_event.analog_changed.stick.ry        = cur.analog.stick.ry - prev.analog.stick.ry;
+    p_event->analog_changed.up       = p_data->analog.up    - p_prev->analog.up;
+    p_event->analog_changed.right    = p_data->analog.right - p_prev->analog.right;
+    p_event->analog_changed.down     = p_data->analog.down  - p_prev->analog.down;
+    p_event->analog_changed.left     = p_data->analog.left  - p_prev->analog.left;
 
-#ifndef PS3_PARSE_SKIP_ANALOG_BUTTON
-    ps3_event.analog_changed.button.up       = cur.analog.button.up    - prev.analog.button.up;
-    ps3_event.analog_changed.button.right    = cur.analog.button.right - prev.analog.button.right;
-    ps3_event.analog_changed.button.down     = cur.analog.button.down  - prev.analog.button.down;
-    ps3_event.analog_changed.button.left     = cur.analog.button.left  - prev.analog.button.left;
+    p_event->analog_changed.l2       = p_data->analog.l2 - p_prev->analog.l2;
+    p_event->analog_changed.r2       = p_data->analog.r2 - p_prev->analog.r2;
+    p_event->analog_changed.l1       = p_data->analog.l1 - p_prev->analog.l1;
+    p_event->analog_changed.r1       = p_data->analog.r1 - p_prev->analog.r1;
 
-    ps3_event.analog_changed.button.l2       = cur.analog.button.l2 - prev.analog.button.l2;
-    ps3_event.analog_changed.button.r2       = cur.analog.button.r2 - prev.analog.button.r2;
-    ps3_event.analog_changed.button.l1       = cur.analog.button.l1 - prev.analog.button.l1;
-    ps3_event.analog_changed.button.r1       = cur.analog.button.r1 - prev.analog.button.r1;
-
-    ps3_event.analog_changed.button.triangle = cur.analog.button.triangle - prev.analog.button.triangle;
-    ps3_event.analog_changed.button.circle   = cur.analog.button.circle   - prev.analog.button.circle;
-    ps3_event.analog_changed.button.cross    = cur.analog.button.cross    - prev.analog.button.cross;
-    ps3_event.analog_changed.button.square   = cur.analog.button.square   - prev.analog.button.square;
+    p_event->analog_changed.triangle = p_data->analog.triangle - p_prev->analog.triangle;
+    p_event->analog_changed.circle   = p_data->analog.circle   - p_prev->analog.circle;
+    p_event->analog_changed.cross    = p_data->analog.cross    - p_prev->analog.cross;
+    p_event->analog_changed.square   = p_data->analog.square   - p_prev->analog.square;
 #endif
 #endif
-
-    return ps3_event;
-}
-
-/********************/
-/*    A N A L O G   */
-/********************/
-static ps3_analog_stick_t ps3_parse_packet_analog_stick(uint8_t *packet)
-{
-    ps3_analog_stick_t ps3_analog_stick;
-
-    ps3_analog_stick.lx = packet[ps3_packet_index_analog_stick_lx];
-    ps3_analog_stick.ly = packet[ps3_packet_index_analog_stick_ly];
-    ps3_analog_stick.rx = packet[ps3_packet_index_analog_stick_rx];
-    ps3_analog_stick.ry = packet[ps3_packet_index_analog_stick_ry];
-
-    return ps3_analog_stick;
-}
-
-static ps3_analog_button_t ps3_parse_packet_analog_button(uint8_t *packet)
-{
-    ps3_analog_button_t ps3_analog_button;
-
-    ps3_analog_button.up       = packet[ps3_packet_index_analog_button_up];
-    ps3_analog_button.right    = packet[ps3_packet_index_analog_button_right];
-    ps3_analog_button.down     = packet[ps3_packet_index_analog_button_down];
-    ps3_analog_button.left     = packet[ps3_packet_index_analog_button_left];
-
-    ps3_analog_button.l2       = packet[ps3_packet_index_analog_button_l2];
-    ps3_analog_button.r2       = packet[ps3_packet_index_analog_button_r2];
-    ps3_analog_button.l1       = packet[ps3_packet_index_analog_button_l1];
-    ps3_analog_button.r1       = packet[ps3_packet_index_analog_button_r1];
-
-    ps3_analog_button.triangle = packet[ps3_packet_index_analog_button_triangle];
-    ps3_analog_button.circle   = packet[ps3_packet_index_analog_button_circle];
-    ps3_analog_button.cross    = packet[ps3_packet_index_analog_button_cross];
-    ps3_analog_button.square   = packet[ps3_packet_index_analog_button_square];
-
-    return ps3_analog_button;
-}
-
-/*********************/
-/*   B U T T O N S   */
-/*********************/
-static ps3_button_t ps3_parse_packet_buttons(uint8_t *packet)
-{
-    ps3_button_t ps3_button;
-
-    ps3_button.fields = *((uint32_t*)&packet[ps3_packet_index_buttons_raw]) & ps3_button_mask_fields;
-
-    return ps3_button;
-}
-
-/*******************************/
-/*   S T A T U S   F L A G S   */
-/*******************************/
-static ps3_status_t ps3_parse_packet_status(uint8_t *packet)
-{
-    ps3_status_t ps3_status;
-
-    ps3_status.battery    =  packet[ps3_packet_index_status+1];
-    ps3_status.charging   =  ps3_status.battery == ps3_status_battery_charging;
-    ps3_status.connection = (packet[ps3_packet_index_status+2] & ps3_status_mask_bluetooth) ? ps3_status_connection_bluetooth : ps3_status_connection_usb;
-    ps3_status.rumbling   = (packet[ps3_packet_index_status+2] & ps3_status_mask_rumbling) ? false: true;
-
-    return ps3_status;
-}
-
-/********************/
-/*   S E N S O R S  */
-/********************/
-static ps3_sensor_t ps3_parse_packet_sensor(uint8_t *packet)
-{
-    ps3_sensor_t ps3_sensor;
-
-    ps3_sensor.accelerometer.x = (packet[ps3_packet_index_sensor_accelerometer_x] << 8U) | packet[ps3_packet_index_sensor_accelerometer_x+1];
-    ps3_sensor.accelerometer.y = (packet[ps3_packet_index_sensor_accelerometer_y] << 8U) | packet[ps3_packet_index_sensor_accelerometer_y+1];
-    ps3_sensor.accelerometer.z = (packet[ps3_packet_index_sensor_accelerometer_z] << 8U) | packet[ps3_packet_index_sensor_accelerometer_z+1];
-    ps3_sensor.gyroscope.z     = (packet[ps3_packet_index_sensor_gyroscope_z]     << 8U) | packet[ps3_packet_index_sensor_gyroscope_z+1];
-
-    return ps3_sensor;
 }
