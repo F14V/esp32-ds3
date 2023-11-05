@@ -52,9 +52,9 @@ static tL2CAP_APPL_INFO ps3_appl_info = {
     NULL                         // Transmit complete
 };
 
-static tL2CAP_CFG_INFO ps3_cfg_info;
-
-static bool is_connected = false;
+static tL2CAP_CFG_INFO ps3_l2cap_cfg_info;
+static bool ps3_l2cap_hidc_connected = false;
+static bool ps3_l2cap_hidi_connected = false;
 
 
 /********************************************************************************/
@@ -89,6 +89,8 @@ void ps3_l2cap_deinit_services()
 {
     ps3_l2cap_deinit_service("PS3-HIDC", BT_PSM_HIDC);
     ps3_l2cap_deinit_service("PS3-HIDI", BT_PSM_HIDI);
+    ps3_l2cap_hidc_connected = false;
+    ps3_l2cap_hidi_connected = false;
 }
 
 /*******************************************************************************
@@ -201,7 +203,7 @@ static void ps3_l2cap_connect_ind_cb(BD_ADDR bd_addr, uint16_t l2cap_cid, uint16
     L2CA_ConnectRsp(bd_addr, l2cap_id, l2cap_cid, L2CAP_CONN_OK, L2CAP_CONN_OK);
 
     /* Send a Configuration Request. */
-    L2CA_ConfigReq(l2cap_cid, &ps3_cfg_info);
+    L2CA_ConfigReq(l2cap_cid, &ps3_l2cap_cfg_info);
 }
 
 /*******************************************************************************
@@ -235,6 +237,7 @@ static void ps3_l2cap_config_ind_cb(uint16_t l2cap_cid, tL2CAP_CFG_INFO *p_cfg)
 
     p_cfg->result = L2CAP_CFG_OK;
 
+    /* Send a Config response */
     L2CA_ConfigRsp(l2cap_cid, p_cfg);
 }
 
@@ -252,12 +255,17 @@ static void ps3_l2cap_config_cfm_cb(uint16_t l2cap_cid, tL2CAP_CFG_INFO *p_cfg)
 {
     ESP_LOGI(PS3_TAG, "[%s] l2cap_cid: 0x%02x\n  p_cfg->result: %d", __func__, l2cap_cid, p_cfg->result);
 
-    /* The PS3 controller is connected after    */
-    /* receiving the second config confirmation */
-    is_connected = l2cap_cid == PS3_L2CAP_ID_HIDI;
-
-    if (is_connected) {
-        ps3Enable();
+    if (p_cfg->result == L2CAP_CFG_OK) {
+        if (l2cap_cid == PS3_L2CAP_ID_HIDC) {
+            ps3_l2cap_hidc_connected = true;
+        }
+        if (l2cap_cid == PS3_L2CAP_ID_HIDI) {
+            ps3_l2cap_hidi_connected = true;
+        }
+        /* The PS3 controller is connected after receiving both config confirmation */
+        if (ps3_l2cap_hidc_connected && ps3_l2cap_hidi_connected) {
+            ps3Enable();
+        }
     }
 }
 
@@ -274,6 +282,21 @@ static void ps3_l2cap_config_cfm_cb(uint16_t l2cap_cid, tL2CAP_CFG_INFO *p_cfg)
 static void ps3_l2cap_disconnect_ind_cb(uint16_t l2cap_cid, bool ack_needed)
 {
     ESP_LOGI(PS3_TAG, "[%s] l2cap_cid: 0x%02x\n  ack_needed: %d", __func__, l2cap_cid, ack_needed);
+
+    if (ack_needed) {
+        /* Send a Disconnect response */
+        L2CA_DisconnectRsp(l2cap_cid);
+    }
+    if (l2cap_cid == PS3_L2CAP_ID_HIDC) {
+        ps3_l2cap_hidc_connected = false;
+    }
+    if (l2cap_cid == PS3_L2CAP_ID_HIDI) {
+        ps3_l2cap_hidi_connected = false;
+    }
+    /* The device requests disconnect */
+    if (!ps3_l2cap_hidc_connected || !ps3_l2cap_hidi_connected) {
+        
+    }
 }
 
 /*******************************************************************************
@@ -289,6 +312,19 @@ static void ps3_l2cap_disconnect_ind_cb(uint16_t l2cap_cid, bool ack_needed)
 static void ps3_l2cap_disconnect_cfm_cb(uint16_t l2cap_cid, uint16_t result)
 {
     ESP_LOGI(PS3_TAG, "[%s] l2cap_cid: 0x%02x\n  result: %d", __func__, l2cap_cid, result);
+
+    if (result == L2CAP_CONN_OK) {
+        if (l2cap_cid == PS3_L2CAP_ID_HIDC) {
+            ps3_l2cap_hidc_connected = false;
+        }
+        if (l2cap_cid == PS3_L2CAP_ID_HIDI) {
+            ps3_l2cap_hidi_connected = false;
+        }
+        /* The device acknowledges disconnect */
+        if (!ps3_l2cap_hidc_connected || !ps3_l2cap_hidi_connected) {
+            
+        }
+    };
 }
 
 /*******************************************************************************
@@ -303,8 +339,11 @@ static void ps3_l2cap_disconnect_cfm_cb(uint16_t l2cap_cid, uint16_t result)
 *******************************************************************************/
 static void ps3_l2cap_data_ind_cb(uint16_t l2cap_cid, BT_HDR *p_buf)
 {
-    if (p_buf->len > 2) {
-        ps3_parse_packet(p_buf->data);
+    /* Check if data is received via the HID interrupt channel */
+    if (l2cap_cid == PS3_L2CAP_ID_HIDI) {
+        if (p_buf->len > 2) {
+            ps3_parse_packet(p_buf->data);
+        }
     }
 
     osi_free(p_buf);
