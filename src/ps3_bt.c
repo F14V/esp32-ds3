@@ -37,7 +37,6 @@ void ps3_bt_init()
 {
     esp_err_t ret;
 
-#ifndef ARDUINO_ARCH_ESP32
     /* Initialize the nvs flash */
     ret = nvs_flash_init();
     if (ret == ESP_ERR_NVS_NO_FREE_PAGES || ret == ESP_ERR_NVS_NEW_VERSION_FOUND)
@@ -86,7 +85,6 @@ void ps3_bt_init()
         ESP_LOGE(PS3_TAG, "%s enable bluedroid failed: %s\n", __func__, esp_err_to_name(ret));
         return;
     }
-#endif
 
     /* Set the Bluetooth device name */
     ret = esp_bt_dev_set_device_name(PS3_DEVICE_NAME);
@@ -118,7 +116,6 @@ void ps3_bt_deinit()
 {
     esp_err_t ret;
 
-#ifndef ARDUINO_ARCH_ESP32
     /* Disable the Bluedroid stack */
     ret = esp_bluedroid_disable();
     if (ret != ESP_OK)
@@ -150,5 +147,4 @@ void ps3_bt_deinit()
         ESP_LOGE(PS3_TAG, "%s deinitialize controller failed: %s\n", __func__, esp_err_to_name(ret));
         return;
     }
-#endif
 }

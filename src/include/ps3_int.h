@@ -5,8 +5,6 @@
 #include "ps3.h"
 
 /** Check if the project is configured properly */
-#ifndef ARDUINO_ARCH_ESP32
-
 #ifndef CONFIG_BT_ENABLED
 #error "The ESP32-PS3 component requires the Bluetooth component to be enabled in the project's menuconfig"
 #endif
@@ -31,8 +29,6 @@
 #else
 #error "The selected Bluetooth controller mode is not supported by the ESP32-PS3 component"
 #endif
-
-#endif // ARDUINO_ARCH_ESP32
 
 
 /** Size of the output report buffer for the Dualshock and Navigation controllers */
