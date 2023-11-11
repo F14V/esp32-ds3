@@ -20,13 +20,9 @@ static const uint8_t hid_cmd_payload_report_enable[] = { 0x42, 0x03, 0x00, 0x00 
 
 /* Connection callbacks */
 static ps3_connection_callback_t ps3_connection_cb = NULL;
-static ps3_connection_object_callback_t ps3_connection_object_cb = NULL;
-static void *ps3_connection_object = NULL;
 
 /* Event callbacks */
 static ps3_event_callback_t ps3_event_cb = NULL;
-static ps3_event_object_callback_t ps3_event_object_cb = NULL;
-static void *ps3_event_object = NULL;
 
 /* Status flags */
 static bool ps3_is_connected = false;
@@ -274,23 +270,6 @@ void ps3SetConnectionCallback(ps3_connection_callback_t cb)
 
 /*******************************************************************************
 **
-** Function         ps3SetConnectionObjectCallback
-**
-** Description      Registers a callback for receiving PS3 controller
-**                  connection notifications
-**
-**
-** Returns          void
-**
-*******************************************************************************/
-void ps3SetConnectionObjectCallback(void *const p_object, ps3_connection_object_callback_t cb)
-{
-    ps3_connection_object_cb = cb;
-    ps3_connection_object = p_object;
-}
-
-/*******************************************************************************
-**
 ** Function         ps3SetEventCallback
 **
 ** Description      Registers a callback for receiving PS3 controller events
@@ -302,22 +281,6 @@ void ps3SetConnectionObjectCallback(void *const p_object, ps3_connection_object_
 void ps3SetEventCallback(ps3_event_callback_t cb)
 {
     ps3_event_cb = cb;
-}
-
-/*******************************************************************************
-**
-** Function         ps3SetEventObjectCallback
-**
-** Description      Registers a callback for receiving PS3 controller events
-**
-**
-** Returns          void
-**
-*******************************************************************************/
-void ps3SetEventObjectCallback(void *const p_object, ps3_event_object_callback_t cb)
-{
-    ps3_event_object_cb = cb;
-    ps3_event_object = p_object;
 }
 
 /*******************************************************************************
@@ -360,23 +323,16 @@ static void ps3_handle_data_event(ps3_input_data_t *const p_data, ps3_event_t *c
 {
     // Trigger packet event, but if this is the very first packet after connecting, trigger a connection event instead
     if (ps3_is_active) {
+        /* Call the provided event callback */
         if (ps3_event_cb != NULL) {
             ps3_event_cb(p_data, p_event);
-        }
-
-        if (ps3_event_object_cb != NULL && ps3_event_object != NULL) {
-            ps3_event_object_cb(ps3_event_object, p_data, p_event);
         }
     }
     else {
         ps3_is_active = true;
-
+        /* Call the provided connection callback */
         if (ps3_connection_cb != NULL) {
             ps3_connection_cb(ps3_is_active);
-        }
-
-        if (ps3_connection_object_cb != NULL && ps3_connection_object != NULL) {
-            ps3_connection_object_cb(ps3_connection_object, ps3_is_active);
         }
     }
 }
