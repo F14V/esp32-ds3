@@ -1,11 +1,11 @@
 #include <stdint.h>
 #include <stdbool.h>
 #include <string.h>
-#include "include/ps3.h"
-#include "include/ps3_int.h"
+#include "include/ds3.h"
+#include "include/ds3_int.h"
 #include "esp_log.h"
 
-#define  PS3_TAG "PS3_PARSER"
+#define  DS3_TAG "DS3_PARSER"
 
 
 /********************************************************************************/
@@ -17,43 +17,43 @@ typedef struct __attribute__((__packed__)) {
     /* Unknown */
     uint8_t unk0[1];
     /* Button */
-    ps3_button_t button;
+    ds3_button_t button;
     /* Unknown */
     uint8_t unk1[1];
     /* Stick */
-    ps3_stick_t stick;
+    ds3_stick_t stick;
     /* Unknown */
     uint8_t unk2[4];
     /* Analog */
-    ps3_analog_t analog;
+    ds3_analog_t analog;
     /* Unknown */
     uint8_t unk3[3];
     /* Status */
-    ps3_status_t status;
+    ds3_status_t status;
     /* Unknown */
     uint8_t unk4[9];
     /* Sensor */
-    ps3_sensor_t sensor;
-} ps3_input_report_t;
+    ds3_sensor_t sensor;
+} ds3_input_report_t;
 
 /* Led payload struct */
-#define PS3_LED_PAYLOAD {0xFF, 0x27, 0x10, 0x00, 0x32}
+#define DS3_LED_PAYLOAD {0xFF, 0x27, 0x10, 0x00, 0x32}
 typedef struct {
     uint8_t led4[5];
     uint8_t led3[5];
     uint8_t led2[5];
     uint8_t led1[5];
-} ps3_led_payload_t;
+} ds3_led_payload_t;
 
 /* Output report struct */
 typedef struct __attribute__((__packed__)) {
     uint8_t unk0[1];
-    ps3_rumble_t rumble;
+    ds3_rumble_t rumble;
     uint8_t unk1[4];
-    ps3_led_t led;
-    ps3_led_payload_t payload;
+    ds3_led_t led;
+    ds3_led_payload_t payload;
     uint8_t unk2[5];
-} ps3_output_report_t;
+} ds3_output_report_t;
 
 
 /********************************************************************************/
@@ -62,17 +62,17 @@ typedef struct __attribute__((__packed__)) {
 
 /*******************************************************************************
 **
-** Function         ps3_parse_input
+** Function         ds3_parse_input
 **
 ** Description      Parse the input packet into input data
 **
 ** Returns          void
 **
 *******************************************************************************/
-void ps3_parse_input(uint8_t p_packet[const], ps3_input_data_t *const p_data)
+void ds3_parse_input(uint8_t p_packet[const], ds3_input_data_t *const p_data)
 {
     /* Cast input report pointer */
-    ps3_input_report_t *p_report = (ps3_input_report_t *)p_packet;
+    ds3_input_report_t *p_report = (ds3_input_report_t *)p_packet;
 
     /* Parse input data */
     p_data->button = p_report->button;
@@ -82,11 +82,11 @@ void ps3_parse_input(uint8_t p_packet[const], ps3_input_data_t *const p_data)
     p_data->stick.ly -= (INT8_MAX + 1);
     p_data->stick.rx -= (INT8_MAX + 1);
     p_data->stick.ry -= (INT8_MAX + 1);
-#ifndef PS3_PARSE_SKIP_ANALOG
+#ifndef DS3_PARSE_SKIP_ANALOG
     p_data->analog = p_report->analog;
 #endif
     p_data->status = p_report->status;
-#ifndef PS3_PARSE_SKIP_SENSOR
+#ifndef DS3_PARSE_SKIP_SENSOR
     p_data->sensor = p_report->sensor;
     /* Remove offset */
     p_data->sensor.ax -= (INT16_MAX + 1);
@@ -98,34 +98,34 @@ void ps3_parse_input(uint8_t p_packet[const], ps3_input_data_t *const p_data)
 
 /*******************************************************************************
 **
-** Function         ps3_parse_output
+** Function         ds3_parse_output
 **
 ** Description      Parse the output data into output packet
 **
 ** Returns          void
 **
 *******************************************************************************/
-void ps3_parse_output(ps3_output_data_t *const p_data, uint8_t p_packet[const])
+void ds3_parse_output(ds3_output_data_t *const p_data, uint8_t p_packet[const])
 {
     /* Cast output report pointer */
-    ps3_output_report_t *p_report = (ps3_output_report_t *)p_packet;
+    ds3_output_report_t *p_report = (ds3_output_report_t *)p_packet;
 
     /* Parse output data */
     p_report->rumble = p_data->rumble;
     p_report->led = p_data->led;
-    p_report->payload = (ps3_led_payload_t){PS3_LED_PAYLOAD, PS3_LED_PAYLOAD, PS3_LED_PAYLOAD, PS3_LED_PAYLOAD};
+    p_report->payload = (ds3_led_payload_t){DS3_LED_PAYLOAD, DS3_LED_PAYLOAD, DS3_LED_PAYLOAD, DS3_LED_PAYLOAD};
 }
 
 /*******************************************************************************
 **
-** Function         ps3_parse_event
+** Function         ds3_parse_event
 **
 ** Description      Parse the input data and previous data into event report
 **
 ** Returns          void
 **
 *******************************************************************************/
-void ps3_parse_event(ps3_input_data_t *const p_prev, ps3_input_data_t *const p_data, ps3_event_t *const p_event)
+void ds3_parse_event(ds3_input_data_t *const p_prev, ds3_input_data_t *const p_data, ds3_event_t *const p_event)
 {
     /* Button events */
     uint8_t *p_old = (uint8_t *)&p_prev->button;
@@ -150,8 +150,8 @@ void ps3_parse_event(ps3_input_data_t *const p_prev, ps3_input_data_t *const p_d
     p_event->stick_changed.rx        = p_data->stick.rx - p_prev->stick.rx;
     p_event->stick_changed.ry        = p_data->stick.ry - p_prev->stick.ry;
 
-#ifndef PS3_PARSE_SKIP_ANALOG
-#ifndef PS3_PARSE_SKIP_ANALOG_CHANGED
+#ifndef DS3_PARSE_SKIP_ANALOG
+#ifndef DS3_PARSE_SKIP_ANALOG_CHANGED
     /* Analog events */
     p_event->analog_changed.up       = p_data->analog.up    - p_prev->analog.up;
     p_event->analog_changed.right    = p_data->analog.right - p_prev->analog.right;

@@ -1,8 +1,8 @@
 #include <stdbool.h>
 #include <stdint.h>
 #include <string.h>
-#include "include/ps3.h"
-#include "include/ps3_int.h"
+#include "include/ds3.h"
+#include "include/ds3_int.h"
 #include "nvs.h"
 #include "nvs_flash.h"
 #include "esp_log.h"
@@ -11,8 +11,8 @@
 #include "esp_bt_device.h"
 #include "esp_gap_bt_api.h"
 
-#define PS3_TAG "PS3_BT"
-#define PS3_DEVICE_NAME "PS3 Host"
+#define DS3_TAG "DS3_BT"
+#define DS3_DEVICE_NAME "DS3 Host"
 
 
 /********************************************************************************/
@@ -26,14 +26,14 @@
 
 /*******************************************************************************
 **
-** Function         ps3_bt_init
+** Function         ds3_bt_init
 **
 ** Description      Initialize the Bluetooth service
 **
 ** Returns          void
 **
 *******************************************************************************/
-void ps3_bt_init()
+void ds3_bt_init()
 {
     esp_err_t ret;
 
@@ -58,7 +58,7 @@ void ps3_bt_init()
     ret = esp_bt_controller_init(&bt_cfg);
     if (ret != ESP_OK)
     {
-        ESP_LOGE(PS3_TAG, "%s initialize controller failed: %s\n", __func__, esp_err_to_name(ret));
+        ESP_LOGE(DS3_TAG, "%s initialize controller failed: %s\n", __func__, esp_err_to_name(ret));
         return;
     }
 
@@ -66,7 +66,7 @@ void ps3_bt_init()
     ret = esp_bt_controller_enable(BT_MODE);
     if (ret != ESP_OK)
     {
-        ESP_LOGE(PS3_TAG, "%s enable controller failed: %s\n", __func__, esp_err_to_name(ret));
+        ESP_LOGE(DS3_TAG, "%s enable controller failed: %s\n", __func__, esp_err_to_name(ret));
         return;
     }
 
@@ -74,7 +74,7 @@ void ps3_bt_init()
     ret = esp_bluedroid_init();
     if (ret != ESP_OK)
     {
-        ESP_LOGE(PS3_TAG, "%s initialize bluedroid failed: %s\n", __func__, esp_err_to_name(ret));
+        ESP_LOGE(DS3_TAG, "%s initialize bluedroid failed: %s\n", __func__, esp_err_to_name(ret));
         return;
     }
 
@@ -82,15 +82,15 @@ void ps3_bt_init()
     ret = esp_bluedroid_enable();
     if (ret != ESP_OK)
     {
-        ESP_LOGE(PS3_TAG, "%s enable bluedroid failed: %s\n", __func__, esp_err_to_name(ret));
+        ESP_LOGE(DS3_TAG, "%s enable bluedroid failed: %s\n", __func__, esp_err_to_name(ret));
         return;
     }
 
     /* Set the Bluetooth device name */
-    ret = esp_bt_dev_set_device_name(PS3_DEVICE_NAME);
+    ret = esp_bt_dev_set_device_name(DS3_DEVICE_NAME);
     if (ret != ESP_OK)
     {
-        ESP_LOGE(PS3_TAG, "%s set device name failed: %s\n", __func__, esp_err_to_name(ret));
+        ESP_LOGE(DS3_TAG, "%s set device name failed: %s\n", __func__, esp_err_to_name(ret));
         return;
     }
 
@@ -98,21 +98,21 @@ void ps3_bt_init()
     ret = esp_bt_gap_set_scan_mode(ESP_BT_CONNECTABLE, ESP_BT_NON_DISCOVERABLE);
     if (ret != ESP_OK)
     {
-        ESP_LOGE(PS3_TAG, "%s set scan mode failed: %s\n", __func__, esp_err_to_name(ret));
+        ESP_LOGE(DS3_TAG, "%s set scan mode failed: %s\n", __func__, esp_err_to_name(ret));
         return;
     }
 }
 
 /*******************************************************************************
 **
-** Function         ps3_bt_deinit
+** Function         ds3_bt_deinit
 **
 ** Description      Deinitialize the Bluetooth service
 **
 ** Returns          void
 **
 *******************************************************************************/
-void ps3_bt_deinit()
+void ds3_bt_deinit()
 {
     esp_err_t ret;
 
@@ -120,7 +120,7 @@ void ps3_bt_deinit()
     ret = esp_bluedroid_disable();
     if (ret != ESP_OK)
     {
-        ESP_LOGE(PS3_TAG, "%s disable bluedroid failed: %s\n", __func__, esp_err_to_name(ret));
+        ESP_LOGE(DS3_TAG, "%s disable bluedroid failed: %s\n", __func__, esp_err_to_name(ret));
         return;
     }
 
@@ -128,7 +128,7 @@ void ps3_bt_deinit()
     ret = esp_bluedroid_deinit();
     if (ret != ESP_OK)
     {
-        ESP_LOGE(PS3_TAG, "%s deinitialize bluedroid failed: %s\n", __func__, esp_err_to_name(ret));
+        ESP_LOGE(DS3_TAG, "%s deinitialize bluedroid failed: %s\n", __func__, esp_err_to_name(ret));
         return;
     }
 
@@ -136,7 +136,7 @@ void ps3_bt_deinit()
     ret = esp_bt_controller_disable();
     if (ret != ESP_OK)
     {
-        ESP_LOGE(PS3_TAG, "%s disable controller failed: %s\n", __func__, esp_err_to_name(ret));
+        ESP_LOGE(DS3_TAG, "%s disable controller failed: %s\n", __func__, esp_err_to_name(ret));
         return;
     }
 
@@ -144,7 +144,7 @@ void ps3_bt_deinit()
     ret = esp_bt_controller_deinit();
     if (ret != ESP_OK)
     {
-        ESP_LOGE(PS3_TAG, "%s deinitialize controller failed: %s\n", __func__, esp_err_to_name(ret));
+        ESP_LOGE(DS3_TAG, "%s deinitialize controller failed: %s\n", __func__, esp_err_to_name(ret));
         return;
     }
 }

@@ -1,9 +1,9 @@
 idf_component_register(
         SRCS
-                "src/ps3.c"
-                "src/ps3_bt.c"
-                "src/ps3_l2cap.c"
-                "src/ps3_parser.c"
+                "src/ds3.c"
+                "src/ds3_bt.c"
+                "src/ds3_l2cap.c"
+                "src/ds3_parser.c"
         REQUIRES nvs_flash bt
         PRIV_REQUIRES bt
         INCLUDE_DIRS src/include

@@ -2,8 +2,8 @@
 #include <stdbool.h>
 #include <string.h>
 #include <esp_mac.h>
-#include "include/ps3.h"
-#include "include/ps3_int.h"
+#include "include/ds3.h"
+#include "include/ds3_int.h"
 
 
 /********************************************************************************/
@@ -19,26 +19,26 @@ static const uint8_t hid_cmd_payload_report_enable[] = { 0x42, 0x03, 0x00, 0x00 
 /********************************************************************************/
 
 /* Connection callbacks */
-static ps3_connection_callback_t ps3_connection_cb = NULL;
+static ds3_connection_callback_t ds3_connection_cb = NULL;
 
 /* Event callbacks */
-static ps3_event_callback_t ps3_event_cb = NULL;
+static ds3_event_callback_t ds3_event_cb = NULL;
 
 /* Status flags */
-static bool ps3_is_connected = false;
-static bool ps3_is_active = false;
+static bool ds3_is_connected = false;
+static bool ds3_is_active = false;
 
 /* Input and output data */
-static ps3_input_data_t ps3_input_data;
-static ps3_output_data_t ps3_output_data;
+static ds3_input_data_t ds3_input_data;
+static ds3_output_data_t ds3_output_data;
 
 
 /********************************************************************************/
 /*              L O C A L    F U N C T I O N     P R O T O T Y P E S            */
 /********************************************************************************/
 
-static void ps3_handle_connect_event(uint8_t is_connected);
-static void ps3_handle_data_event(ps3_input_data_t *const p_data, ps3_event_t *const p_event);
+static void ds3_handle_connect_event(uint8_t is_connected);
+static void ds3_handle_data_event(ds3_input_data_t *const p_data, ds3_event_t *const p_event);
 
 
 /********************************************************************************/
@@ -47,24 +47,24 @@ static void ps3_handle_data_event(ps3_input_data_t *const p_data, ps3_event_t *c
 
 /*******************************************************************************
 **
-** Function         ps3Init
+** Function         ds3Init
 **
 ** Description      This initializes the bluetooth services to listen
-**                  for an incoming PS3 controller connection.
+**                  for an incoming ds3 controller connection.
 **
 **
 ** Returns          void
 **
 *******************************************************************************/
-void ps3Init()
+void ds3Init()
 {
-    ps3_bt_init();
-    ps3_l2cap_init_services();
+    ds3_bt_init();
+    ds3_l2cap_init_services();
 }
 
 /*******************************************************************************
 **
-** Function         ps3Deinit
+** Function         ds3Deinit
 **
 ** Description      This deinitializes the bluetooth services to stop
 **                  listening for incoming connections.
@@ -73,227 +73,227 @@ void ps3Init()
 ** Returns          void
 **
 *******************************************************************************/
-void ps3Deinit()
+void ds3Deinit()
 {
-    ps3_l2cap_deinit_services();
-    ps3_bt_deinit();
+    ds3_l2cap_deinit_services();
+    ds3_bt_deinit();
 }
 
 /*******************************************************************************
 **
-** Function         ps3IsConnected
+** Function         ds3IsConnected
 **
-** Description      This returns whether a PS3 controller is connected, based
+** Description      This returns whether a DS3 controller is connected, based
 **                  on whether a successful handshake has taken place.
 **
 **
 ** Returns          bool
 **
 *******************************************************************************/
-bool ps3IsConnected()
+bool ds3IsConnected()
 {
-    return ps3_is_active;
+    return ds3_is_active;
 }
 
 /*******************************************************************************
 **
-** Function         ps3HandleConnection
+** Function         ds3HandleConnection
 **
-** Description      Handle the connection of the PS3 controller.
+** Description      Handle the connection of the DS3 controller.
 **
 **
 ** Returns          void
 **
 *******************************************************************************/
-void ps3HandleConnection(bool is_connected)
+void ds3HandleConnection(bool is_connected)
 {
-    ps3_is_connected = is_connected;
+    ds3_is_connected = is_connected;
 
     /* Process the connection event */
-    ps3_handle_connect_event(ps3_is_connected);
+    ds3_handle_connect_event(ds3_is_connected);
 }
 
 /*******************************************************************************
 **
-** Function         ps3EnableReport
+** Function         ds3EnableReport
 **
-** Description      This triggers the PS3 controller to start continually
+** Description      This triggers the DS3 controller to start continually
 **                  sending its data.
 **
 **
 ** Returns          void
 **
 *******************************************************************************/
-void ps3EnableReport()
+void ds3EnableReport()
 {
     hid_cmd_t hid_cmd = {
         .code = hid_cmd_code_set_report | hid_cmd_code_type_feature,
-        .identifier = hid_cmd_identifier_ps3_enable,
+        .identifier = hid_cmd_identifier_ds3_enable,
     };
     uint16_t len = sizeof(hid_cmd_payload_report_enable);
 
     memcpy(hid_cmd.data, hid_cmd_payload_report_enable, len);
 
-    ps3_l2cap_send_data((uint8_t *)&hid_cmd, len + 2U);
+    ds3_l2cap_send_data((uint8_t *)&hid_cmd, len + 2U);
 }
 
 /*******************************************************************************
 **
-** Function         ps3SendCommand
+** Function         ds3SendCommand
 **
-** Description      Send a command to the PS3 controller.
+** Description      Send a command to the DS3 controller.
 **
 **
 ** Returns          void
 **
 *******************************************************************************/
-void ps3SendCommand()
+void ds3SendCommand()
 {
     hid_cmd_t hid_cmd = {
         .code = hid_cmd_code_set_report | hid_cmd_code_type_output,
-        .identifier = hid_cmd_identifier_ps3_control,
+        .identifier = hid_cmd_identifier_ds3_control,
         .data = {0},
     };
     uint16_t len = sizeof(hid_cmd.data);
 
     /* Parse the output data */
-    ps3_parse_output(&ps3_output_data, hid_cmd.data);
+    ds3_parse_output(&ds3_output_data, hid_cmd.data);
 
     /* Send the hid command */
-    ps3_l2cap_send_data((uint8_t *)&hid_cmd, len + 2U);
+    ds3_l2cap_send_data((uint8_t *)&hid_cmd, len + 2U);
 }
 
 /*******************************************************************************
 **
-** Function         ps3ReceiveData
+** Function         ds3ReceiveData
 **
-** Description      Process the incoming data from the PS3 controller.
+** Description      Process the incoming data from the DS3 controller.
 **
 **
 ** Returns          void
 **
 *******************************************************************************/
-void ps3ReceiveData(uint8_t p_data[const])
+void ds3ReceiveData(uint8_t p_data[const])
 {
     hid_cmd_t *p_hid_cmd = (hid_cmd_t *)p_data;
     if (p_hid_cmd->code == (hid_cmd_code_data | hid_cmd_code_type_input))
     {
-        // if (hid_cmd->identifier == hid_cmd_identifier_ps3_control)
-        static ps3_event_t ps3_event;
+        // if (hid_cmd->identifier == hid_cmd_identifier_ds3_control)
+        static ds3_event_t ds3_event;
 
         /* Save the previous data */
-        ps3_input_data_t prev_data = ps3_input_data;
+        ds3_input_data_t prev_data = ds3_input_data;
 
         /* Parse the input data */
-        ps3_parse_input(p_hid_cmd->data, &ps3_input_data);
+        ds3_parse_input(p_hid_cmd->data, &ds3_input_data);
 
         /* Parse the event */
-        ps3_parse_event(&prev_data, &ps3_input_data, &ps3_event);
+        ds3_parse_event(&prev_data, &ds3_input_data, &ds3_event);
 
         /* Process the data event */
-        ps3_handle_data_event(&ps3_input_data, &ps3_event);
+        ds3_handle_data_event(&ds3_input_data, &ds3_event);
     }
 }
 
 /*******************************************************************************
 **
-** Function         ps3SetLed
+** Function         ds3SetLed
 **
-** Description      Sets the LEDs on the PS3 controller
+** Description      Sets the LEDs on the DS3 controller
 **
 **
 ** Returns          void
 **
 *******************************************************************************/
-void ps3SetLed(uint8_t num, bool val)
+void ds3SetLed(uint8_t num, bool val)
 {
     switch (num)
     {
     case 0:
-        ps3SetLeds(val, val, val, val);
+        ds3SetLeds(val, val, val, val);
         break;
     case 1:
-        ps3_output_data.led.led1 = val;
+        ds3_output_data.led.led1 = val;
         break;
     case 2:
-        ps3_output_data.led.led2 = val;
+        ds3_output_data.led.led2 = val;
         break;
     case 3:
-        ps3_output_data.led.led3 = val;
+        ds3_output_data.led.led3 = val;
         break;
     case 4:
-        ps3_output_data.led.led4 = val;
+        ds3_output_data.led.led4 = val;
         break;
     
     default:
         break;
     }
-    ps3SendCommand();
+    ds3SendCommand();
 }
-void ps3SetLeds(bool led1, bool led2, bool led3, bool led4)
+void ds3SetLeds(bool led1, bool led2, bool led3, bool led4)
 {
-    ps3_output_data.led = (ps3_led_t){led1, led2, led3, led4};
-    ps3SendCommand();
+    ds3_output_data.led = (ds3_led_t){led1, led2, led3, led4};
+    ds3SendCommand();
 }
 
 /*******************************************************************************
 **
-** Function         ps3SetRumble
+** Function         ds3SetRumble
 **
-** Description      Sets the Rumble on the PS3 controller
+** Description      Sets the Rumble on the DS3 controller
 **
 **
 ** Returns          void
 **
 *******************************************************************************/
-void ps3SetRumble(uint8_t right_duration, uint8_t right_intensity, uint8_t left_duration, uint8_t left_intensity)
+void ds3SetRumble(uint8_t right_duration, uint8_t right_intensity, uint8_t left_duration, uint8_t left_intensity)
 {
-    ps3_output_data.rumble = (ps3_rumble_t){right_duration, right_intensity, left_duration, left_intensity};
-    ps3SendCommand();
+    ds3_output_data.rumble = (ds3_rumble_t){right_duration, right_intensity, left_duration, left_intensity};
+    ds3SendCommand();
 }
 
 /*******************************************************************************
 **
-** Function         ps3SetConnectionCallback
+** Function         ds3SetConnectionCallback
 **
-** Description      Registers a callback for receiving PS3 controller
+** Description      Registers a callback for receiving DS3 controller
 **                  connection notifications
 **
 **
 ** Returns          void
 **
 *******************************************************************************/
-void ps3SetConnectionCallback(ps3_connection_callback_t cb)
+void ds3SetConnectionCallback(ds3_connection_callback_t cb)
 {
-    ps3_connection_cb = cb;
+    ds3_connection_cb = cb;
 }
 
 /*******************************************************************************
 **
-** Function         ps3SetEventCallback
+** Function         ds3SetEventCallback
 **
-** Description      Registers a callback for receiving PS3 controller events
+** Description      Registers a callback for receiving DS3 controller events
 **
 **
 ** Returns          void
 **
 *******************************************************************************/
-void ps3SetEventCallback(ps3_event_callback_t cb)
+void ds3SetEventCallback(ds3_event_callback_t cb)
 {
-    ps3_event_cb = cb;
+    ds3_event_cb = cb;
 }
 
 /*******************************************************************************
 **
-** Function         ps3SetBluetoothMacAddress
+** Function         ds3SetBluetoothMacAddress
 **
-** Description      Writes a Registers a callback for receiving PS3 controller events
+** Description      Writes a Registers a callback for receiving DS3 controller events
 **
 **
 ** Returns          void
 **
 *******************************************************************************/
-void ps3SetBluetoothMacAddress(const uint8_t *mac)
+void ds3SetBluetoothMacAddress(const uint8_t *mac)
 {
     // The bluetooth MAC address is derived from the base MAC address
     // https://docs.espressif.com/projects/esp-idf/en/stable/api-reference/system/system.html#mac-address
@@ -307,32 +307,32 @@ void ps3SetBluetoothMacAddress(const uint8_t *mac)
 /*                      L O C A L    F U N C T I O N S                          */
 /********************************************************************************/
 
-static void ps3_handle_connect_event(uint8_t is_connected)
+static void ds3_handle_connect_event(uint8_t is_connected)
 {
     if (is_connected) {
-        if (!ps3_is_active) {
-            ps3EnableReport();
+        if (!ds3_is_active) {
+            ds3EnableReport();
         }
     }
     else {
-        ps3_is_active = false;
+        ds3_is_active = false;
     }
 }
 
-static void ps3_handle_data_event(ps3_input_data_t *const p_data, ps3_event_t *const p_event)
+static void ds3_handle_data_event(ds3_input_data_t *const p_data, ds3_event_t *const p_event)
 {
     // Trigger packet event, but if this is the very first packet after connecting, trigger a connection event instead
-    if (ps3_is_active) {
+    if (ds3_is_active) {
         /* Call the provided event callback */
-        if (ps3_event_cb != NULL) {
-            ps3_event_cb(p_data, p_event);
+        if (ds3_event_cb != NULL) {
+            ds3_event_cb(p_data, p_event);
         }
     }
     else {
-        ps3_is_active = true;
+        ds3_is_active = true;
         /* Call the provided connection callback */
-        if (ps3_connection_cb != NULL) {
-            ps3_connection_cb(ps3_is_active);
+        if (ds3_connection_cb != NULL) {
+            ds3_connection_cb(ds3_is_active);
         }
     }
 }
