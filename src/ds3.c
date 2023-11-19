@@ -53,13 +53,25 @@ static void ds3_handle_data_event(ds3_input_data_t *const p_data, ds3_event_t *c
 **                  for an incoming ds3 controller connection.
 **
 **
-** Returns          void
+** Returns          bool
 **
 *******************************************************************************/
-void ds3Init()
+bool ds3Init()
 {
-    ds3_bt_init();
-    ds3_l2cap_init_services();
+    bool ok;
+
+    ok = ds3_bt_init();
+    if (ok != true)
+    {
+        return false;
+    }
+    ok = ds3_l2cap_init_services();
+    if (ok != true)
+    {
+        return false;
+    }
+
+    return true;
 }
 
 /*******************************************************************************
@@ -70,13 +82,21 @@ void ds3Init()
 **                  listening for incoming connections.
 **
 **
-** Returns          void
+** Returns          bool
 **
 *******************************************************************************/
-void ds3Deinit()
+bool ds3Deinit()
 {
+    bool ok;
+
     ds3_l2cap_deinit_services();
-    ds3_bt_deinit();
+    ok = ds3_bt_deinit();
+    if (ok != true)
+    {
+        return false;
+    }
+
+    return true;
 }
 
 /*******************************************************************************

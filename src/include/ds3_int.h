@@ -74,17 +74,17 @@ typedef struct {
 /*                           B T   F U N C T I O N S                            */
 /********************************************************************************/
 
-void ds3_bt_init();
-void ds3_bt_deinit();
+bool ds3_bt_init();
+bool ds3_bt_deinit();
 
 
 /********************************************************************************/
 /*                        L 2 C A P   F U N C T I O N S                         */
 /********************************************************************************/
 
-void ds3_l2cap_init_services();
+bool ds3_l2cap_init_services();
 void ds3_l2cap_deinit_services();
-void ds3_l2cap_send_data(uint8_t p_data[const], uint16_t len);
+bool ds3_l2cap_send_data(uint8_t p_data[const], uint16_t len);
 
 
 /********************************************************************************/

@@ -24,7 +24,7 @@
 /*              L O C A L    F U N C T I O N     P R O T O T Y P E S            */
 /********************************************************************************/
 
-static void ds3_l2cap_init_service(const char *name, uint16_t psm, uint8_t service_id);
+static bool ds3_l2cap_init_service(const char *name, uint16_t psm, uint8_t service_id);
 static void ds3_l2cap_deinit_service(const char *name, uint16_t psm);
 static void ds3_l2cap_connect_ind_cb(BD_ADDR bd_addr, uint16_t l2cap_cid, uint16_t psm, uint8_t l2cap_id);
 static void ds3_l2cap_connect_cfm_cb(uint16_t l2cap_cid, uint16_t result);
@@ -69,13 +69,25 @@ static bool ds3_l2cap_hidi_connected = false;
 **
 ** Description      This function initialises the required L2CAP services.
 **
-** Returns          void
+** Returns          bool
 **
 *******************************************************************************/
-void ds3_l2cap_init_services()
+bool ds3_l2cap_init_services()
 {
-    ds3_l2cap_init_service(DS3_TAG_HIDC, BT_PSM_HIDC, BTM_SEC_SERVICE_FIRST_EMPTY + 0);
-    ds3_l2cap_init_service(DS3_TAG_HIDI, BT_PSM_HIDI, BTM_SEC_SERVICE_FIRST_EMPTY + 1);
+    bool ok;
+
+    ok = ds3_l2cap_init_service(DS3_TAG_HIDC, BT_PSM_HIDC, BTM_SEC_SERVICE_FIRST_EMPTY + 0);
+    if (ok != true)
+    {
+        return false;
+    }
+    ok = ds3_l2cap_init_service(DS3_TAG_HIDI, BT_PSM_HIDI, BTM_SEC_SERVICE_FIRST_EMPTY + 1);
+    if (ok != true)
+    {
+        return false;
+    }
+
+    return true;
 }
 
 /*******************************************************************************
@@ -101,10 +113,10 @@ void ds3_l2cap_deinit_services()
 **
 ** Description      This function sends the HID command using the L2CAP service.
 **
-** Returns          void
+** Returns          bool
 **
 *******************************************************************************/
-void ds3_l2cap_send_data(uint8_t p_data[const], uint16_t len)
+bool ds3_l2cap_send_data(uint8_t p_data[const], uint16_t len)
 {
     uint8_t result;
     BT_HDR *p_buf;
@@ -135,6 +147,8 @@ void ds3_l2cap_send_data(uint8_t p_data[const], uint16_t len)
     default:
         break;
     }
+    
+    return (result == L2CAP_DW_SUCCESS);
 }
 
 
@@ -149,24 +163,26 @@ void ds3_l2cap_send_data(uint8_t p_data[const], uint16_t len)
 ** Description      This registers the specified bluetooth service in order
 **                  to listen for incoming connections.
 **
-** Returns          void
+** Returns          bool
 **
 *******************************************************************************/
-static void ds3_l2cap_init_service(const char *name, uint16_t psm, uint8_t service_id)
+static bool ds3_l2cap_init_service(const char *name, uint16_t psm, uint8_t service_id)
 {
     /* Register the PSM for incoming connections */
     if (!L2CA_Register(psm, &ds3_appl_info)) {
         ESP_LOGE(DS3_TAG, "%s Registering service %s failed", __func__, name);
-        return;
+        return false;
     }
 
     /* Register with the Security Manager for our specific security level (none) */
     if (!BTM_SetSecurityLevel(false, name, service_id, 0, psm, 0, 0)) {
         ESP_LOGE(DS3_TAG, "%s Registering security service %s failed", __func__, name);
-        return;
+        return false;
     }
 
     ESP_LOGI(DS3_TAG, "[%s] Service %s Initialized", __func__, name);
+
+    return true;
 }
 
 /*******************************************************************************

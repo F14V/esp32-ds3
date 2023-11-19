@@ -30,10 +30,10 @@
 **
 ** Description      Initialize the Bluetooth service
 **
-** Returns          void
+** Returns          bool
 **
 *******************************************************************************/
-void ds3_bt_init()
+bool ds3_bt_init()
 {
     esp_err_t ret;
 
@@ -59,7 +59,7 @@ void ds3_bt_init()
     if (ret != ESP_OK)
     {
         ESP_LOGE(DS3_TAG, "%s initialize controller failed: %s\n", __func__, esp_err_to_name(ret));
-        return;
+        return false;
     }
 
     /* Enable the Bluetooth controller */
@@ -67,7 +67,7 @@ void ds3_bt_init()
     if (ret != ESP_OK)
     {
         ESP_LOGE(DS3_TAG, "%s enable controller failed: %s\n", __func__, esp_err_to_name(ret));
-        return;
+        return false;
     }
 
     /* Initialize the Bluedroid stack */
@@ -75,7 +75,7 @@ void ds3_bt_init()
     if (ret != ESP_OK)
     {
         ESP_LOGE(DS3_TAG, "%s initialize bluedroid failed: %s\n", __func__, esp_err_to_name(ret));
-        return;
+        return false;
     }
 
     /* Enable the Bluedroid stack */
@@ -83,7 +83,7 @@ void ds3_bt_init()
     if (ret != ESP_OK)
     {
         ESP_LOGE(DS3_TAG, "%s enable bluedroid failed: %s\n", __func__, esp_err_to_name(ret));
-        return;
+        return false;
     }
 
     /* Set the Bluetooth device name */
@@ -91,7 +91,7 @@ void ds3_bt_init()
     if (ret != ESP_OK)
     {
         ESP_LOGE(DS3_TAG, "%s set device name failed: %s\n", __func__, esp_err_to_name(ret));
-        return;
+        return false;
     }
 
     /* Set the Bluetooth scan mode */
@@ -99,8 +99,10 @@ void ds3_bt_init()
     if (ret != ESP_OK)
     {
         ESP_LOGE(DS3_TAG, "%s set scan mode failed: %s\n", __func__, esp_err_to_name(ret));
-        return;
+        return false;
     }
+
+    return true;
 }
 
 /*******************************************************************************
@@ -109,10 +111,10 @@ void ds3_bt_init()
 **
 ** Description      Deinitialize the Bluetooth service
 **
-** Returns          void
+** Returns          bool
 **
 *******************************************************************************/
-void ds3_bt_deinit()
+bool ds3_bt_deinit()
 {
     esp_err_t ret;
 
@@ -121,7 +123,7 @@ void ds3_bt_deinit()
     if (ret != ESP_OK)
     {
         ESP_LOGE(DS3_TAG, "%s disable bluedroid failed: %s\n", __func__, esp_err_to_name(ret));
-        return;
+        return false;
     }
 
     /* Deinitialize the Bluedroid stack */
@@ -129,7 +131,7 @@ void ds3_bt_deinit()
     if (ret != ESP_OK)
     {
         ESP_LOGE(DS3_TAG, "%s deinitialize bluedroid failed: %s\n", __func__, esp_err_to_name(ret));
-        return;
+        return false;
     }
 
     /* Disable the Bluetooth controller */
@@ -137,7 +139,7 @@ void ds3_bt_deinit()
     if (ret != ESP_OK)
     {
         ESP_LOGE(DS3_TAG, "%s disable controller failed: %s\n", __func__, esp_err_to_name(ret));
-        return;
+        return false;
     }
 
     /* Deinitialize the Bluetooth controller */
@@ -145,6 +147,8 @@ void ds3_bt_deinit()
     if (ret != ESP_OK)
     {
         ESP_LOGE(DS3_TAG, "%s deinitialize controller failed: %s\n", __func__, esp_err_to_name(ret));
-        return;
+        return false;
     }
+
+    return true;
 }

@@ -187,8 +187,8 @@ typedef void (*ds3_event_callback_t)(ds3_input_data_t *const p_data, ds3_event_t
 /********************************************************************************/
 
 bool ds3IsConnected();
-void ds3Init();
-void ds3Deinit();
+bool ds3Init();
+bool ds3Deinit();
 void ds3HandleConnection(bool);
 void ds3EnableReport();
 void ds3SendCommand();
